@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flappy Bird Telegram Edition</title>
+    <!-- استدعاء مكتبة تليجرام -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0; padding: 0; display: flex; justify-content: center;
+            align-items: center; height: 100vh; background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; touch-action: manipulation;
+        }
+        #game-container { position: relative; width: 100%; height: 100%; max-width: 400px; }
+        canvas { display: block; width: 100%; height: 100%; background-color: #70c5ce; }
+        
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; pointer-events: none; color: white; text-align: center;
+        }
+        .screen {
+            display: none; background: rgba(0,0,0,0.5); padding: 30px;
+            border-radius: 20px; backdrop-filter: blur(10px); pointer-events: all;
+        }
+        .active { display: block; }
+        .score { font-size: 50px; font-weight: bold; text-shadow: 2px 2px #000; margin-bottom: 10px; }
+        h1 { margin: 0 0 15px 0; color: #f1c40f; }
+        button {
+            padding: 12px 25px; font-size: 18px; border: none;
+            border-radius: 10px; background: #2ecc71; color: white; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-layer">
+        <!-- شاشة البداية -->
+        <div id="start-screen" class="screen active">
+            <h1>Flappy Bird</h1>
+            <p>جاهز للتحدي؟</p>
+            <button onclick="startGame()">إبدأ اللعب</button>
+        </div>
+
+        <!-- شاشة النتيجة أثناء اللعب -->
+        <div id="game-info" style="position:absolute; top:20px; pointer-events:none;">
+            <div class="score" id="live-score">0</div>
+        </div>
+
+        <!-- شاشة النهاية -->
+        <div id="over-screen" class="screen">
+            <h1>انتهت اللعبة!</h1>
+            <div class="score" id="final-score">0</div>
+            <button onclick="resetGame()">إعادة المحاولة</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // تمديد اللعبة لتملأ شاشة تليجرام
+    tg.ready();
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // ضبط أبعاد الكانفاس لتناسب الشاشة
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let gameState = 'START';
+    let score = 0;
+    let frames = 0;
+
+    const bird = {
+        x: 50, y: canvas.height/2, w: 34, h: 24,
+        velocity: 0, gravity: 0.25, jump: 5, rotation: 0,
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fillRect(-this.w/2, -this.h/2, this.w, this.h); // عصفور بسيط
+            ctx.restore();
+        },
+        update() {
+            if (gameState !== 'PLAYING') return;
+            this.velocity += this.gravity;
+            this.y += this.velocity;
+            this.rotation = Math.min(Math.PI/4, Math.max(-Math.PI/4, this.velocity * 0.1));
+            if (this.y + this.h > canvas.height - 50) endGame();
+        }
+    };
+
+    const pipes = {
+        list: [], gap: 150, width: 60,
+        update() {
+            if (gameState !== 'PLAYING') return;
+            if (frames % 100 === 0) {
+                let y = Math.random() * (canvas.height - 300) + 50;
+                this.list.push({ x: canvas.width, y: y, passed: false });
+            }
+            this.list.forEach((p, i) => {
+                p.x -= 3;
+                // تصادم
+                if (bird.x + bird.w/2 > p.x && bird.x - bird.w/2 < p.x + this.width) {
+                    if (bird.y - bird.h/2 < p.y || bird.y + bird.h/2 > p.y + this.gap) endGame();
+                }
+                // نتيجة
+                if (p.x + this.width < bird.x && !p.passed) {
+                    score++; p.passed = true;
+                    document.getElementById('live-score').innerText = score;
+                }
+            });
+            if (this.list.length > 0 && this.list[0].x < -this.width) this.list.shift();
+        },
+        draw() {
+            ctx.fillStyle = "#2ecc71";
+            this.list.forEach(p => {
+                ctx.fillRect(p.x, 0, this.width, p.y);
+                ctx.fillRect(p.x, p.y + this.gap, this.width, canvas.height);
+            });
+        }
+    };
+
+    function startGame() {
+        gameState = 'PLAYING';
+        document.getElementById('start-screen').classList.remove('active');
+    }
+
+    function endGame() {
+        if (gameState === 'OVER') return;
+        gameState = 'OVER';
+        if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error'); // اهتزاز عند الخسارة
+        document.getElementById('over-screen').classList.add('active');
+        document.getElementById('final-score').innerText = score;
+    }
+
+    function resetGame() {
+        bird.y = canvas.height/2; bird.velocity = 0;
+        pipes.list = []; score = 0; frames = 0;
+        document.getElementById('live-score').innerText = 0;
+        document.getElementById('over-screen').classList.remove('active');
+        gameState = 'PLAYING';
+    }
+
+    // التحكم باللمس
+    window.addEventListener('touchstart', (e) => {
+        if (gameState === 'PLAYING') bird.velocity = -bird.jump;
+    });
+
+    function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // الخلفية
+        ctx.fillStyle = "#70c5ce";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
+        
+        pipes.update(); pipes.draw();
+        bird.update(); bird.draw();
+        
+        // الأرضية
+        ctx.fillStyle = "#e1d995";
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+        frames++;
+        requestAnimationFrame(loop);
+    }
+    loop();
+</script>
+</body>
+</html>
