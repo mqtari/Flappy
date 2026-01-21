@@ -1,119 +1,159 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flappy Bird Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Flappy Bird Mobile Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #f1c40f;
-            --secondary: #2ecc71;
-            --danger: #e74c3c;
-            --glass: rgba(255, 255, 255, 0.15);
+            --bg-color: #70c5ce;
         }
 
-        body {
-            margin: 0; padding: 0; 
-            display: flex; justify-content: center; align-items: center; 
-            height: 100vh; background: #222;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: #000;
             font-family: 'Fredoka One', cursive;
-            overflow: hidden; touch-action: manipulation;
         }
 
         #game-container {
             position: relative;
-            width: 100%; height: 100%;
-            max-width: 450px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        canvas { display: block; width: 100%; height: 100%; }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            max-width: 100%;
+            max-height: 100%;
+        }
 
         .ui-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center;
-            align-items: center; pointer-events: none;
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
+            padding: 20px;
         }
 
         .card {
-            background: var(--glass);
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
-            border: 2px solid rgba(255,255,255,0.2);
-            padding: 30px; border-radius: 25px;
-            text-align: center; color: white;
-            transform: scale(0.9); opacity: 0;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+            width: 90%;
+            max-width: 350px;
             pointer-events: all;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: scale(0.8);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
-        .card.active { transform: scale(1); opacity: 1; }
+        .card.active {
+            transform: scale(1);
+            opacity: 1;
+        }
 
-        h1 { 
-            font-size: 42px; margin: 0 0 10px; 
+        h1 {
+            font-size: clamp(30px, 8vw, 45px);
+            margin: 0 0 10px;
             background: linear-gradient(to bottom, #fff, #f1c40f);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .score-display {
-            font-size: 60px; margin: 10px 0;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            font-size: 70px;
+            line-height: 1;
+            margin: 20px 0;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         button {
-            background: #fff; color: #333;
-            border: none; padding: 15px 40px;
-            font-size: 20px; font-family: 'Fredoka One';
-            border-radius: 50px; cursor: pointer;
-            transition: 0.3s; margin-top: 20px;
-            box-shadow: 0 5px 0 #ddd;
+            background: #fff;
+            color: #333;
+            border: none;
+            padding: 15px 45px;
+            font-size: 20px;
+            font-family: 'Fredoka One';
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 200px;
+            box-shadow: 0 6px 0 #ddd;
+            transition: 0.1s;
         }
 
-        button:active { transform: translateY(3px); box-shadow: 0 2px 0 #ddd; }
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #ddd;
+        }
+
+        #live-score-container {
+            position: absolute;
+            top: 10%;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+        }
 
         #live-score {
-            position: absolute; top: 40px; font-size: 50px;
-            color: white; text-shadow: 3px 3px 0 #444;
-            opacity: 0; transition: 0.3s;
+            font-size: 60px;
+            color: white;
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+            opacity: 0;
         }
-
-        /* تأثير الوميض عند الموت */
-        .flash {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            background: white; opacity: 0; pointer-events: none;
-        }
-        .flash.active { animation: flashAnim 0.3s; }
-        @keyframes flashAnim { 0% { opacity: 0.8; } 100% { opacity: 0; } }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
-    <div class="flash" id="flash-effect"></div>
     
     <div class="ui-overlay">
+        <!-- النتيجة الحية -->
+        <div id="live-score-container">
+            <div id="live-score">0</div>
+        </div>
+
         <!-- شاشة البداية -->
         <div id="start-screen" class="card active">
             <h1>FLAPPY BIRD</h1>
-            <p style="font-size: 18px;">الموسم الأول</p>
-            <button onclick="startGame()">إبدأ الآن</button>
+            <p>اضغط للبدء</p>
+            <button onclick="startGame()">إبدأ</button>
         </div>
-
-        <!-- النتيجة الحية -->
-        <div id="live-score">0</div>
 
         <!-- شاشة النهاية -->
         <div id="over-screen" class="card">
-            <h1 style="color: #e74c3c;">لقد سقطت!</h1>
-            <p>النتيجة الحالية</p>
+            <h1>انتهت اللعبة</h1>
             <div class="score-display" id="final-score">0</div>
             <p>أفضل نتيجة: <span id="best-score">0</span></p>
-            <button onclick="resetGame()" style="background: #2ecc71; color: white; box-shadow: 0 5px 0 #27ae60;">حاول مجدداً</button>
+            <button onclick="resetGame()">إعادة</button>
         </div>
     </div>
 </div>
@@ -126,101 +166,106 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     
-    // ضبط الأبعاد
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
+    // إعدادات اللعبة المتكيفة
+    let width, height, scale;
     let gameState = 'START';
     let score = 0;
     let bestScore = localStorage.getItem('bestScore') || 0;
     let frames = 0;
-    let particles = [];
+    let pipes = [];
+
+    // ضبط الحجم الديناميكي
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        // نستخدم جهاز البكسل ريشيو لضمان الحدة على الموبايل
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        
+        // حساب المقياس بناءً على الطول لضمان ثبات الفيزياء
+        scale = height / 600; 
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
     const bird = {
-        x: 60, y: canvas.height/2, w: 40, h: 30,
-        velocity: 0, gravity: 0.22, jump: 5.5, rotation: 0,
+        x: 60,
+        y: 0,
+        w: 38,
+        h: 28,
+        velocity: 0,
+        get gravity() { return 0.25 * scale; },
+        get jump() { return -5.5 * scale; },
+        rotation: 0,
+
         draw() {
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.rotation);
             
-            // جسم العصفور (تدرج لوني)
-            let grad = ctx.createLinearGradient(-20, -15, 20, 15);
-            grad.addColorStop(0, '#f1c40f');
-            grad.addColorStop(1, '#f39c12');
-            ctx.fillStyle = grad;
-            
-            // رسم جسم بيضاوي
+            // رسم جسم العصفور الاحترافي
+            ctx.fillStyle = '#f1c40f';
             ctx.beginPath();
-            ctx.ellipse(0, 0, 20, 15, 0, 0, Math.PI*2);
+            ctx.ellipse(0, 0, this.w/2, this.h/2, 0, 0, Math.PI*2);
             ctx.fill();
-            ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
             // العين
-            ctx.fillStyle = 'white';
-            ctx.beginPath(); ctx.arc(10, -5, 6, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = 'black';
-            ctx.beginPath(); ctx.arc(12, -5, 2.5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(10, -5, 5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(12, -5, 2, 0, Math.PI*2); ctx.fill();
 
             // المنقار
             ctx.fillStyle = '#e67e22';
             ctx.beginPath();
-            ctx.moveTo(15, 0); ctx.lineTo(25, 3); ctx.lineTo(15, 6); ctx.closePath();
+            ctx.moveTo(15, 0); ctx.lineTo(25, 4); ctx.lineTo(15, 8);
             ctx.fill();
 
             ctx.restore();
         },
+
         update() {
-            if(gameState !== 'PLAYING') {
-                this.y = canvas.height/2 + Math.sin(frames/10) * 10;
+            if (gameState === 'START') {
+                this.y = height / 2 + Math.sin(frames / 15) * 15;
                 return;
             }
             this.velocity += this.gravity;
             this.y += this.velocity;
-            this.rotation = Math.min(Math.PI/4, Math.max(-Math.PI/4, this.velocity * 0.08));
+            this.rotation = Math.min(Math.PI/4, Math.max(-Math.PI/4, this.velocity * 0.1));
 
-            if(this.y > canvas.height - 70) endGame();
-            if(this.y < 0) this.y = 0;
+            if (this.y + this.h/2 >= height - 60) endGame();
         }
     };
 
     class Pipe {
         constructor() {
-            this.x = canvas.width + 100;
-            this.w = 70;
-            this.gap = 160;
-            this.y = Math.random() * (canvas.height - 350) + 100;
+            this.w = 65;
+            this.gap = 150 * scale; // الفجوة تتناسب مع طول الشاشة
+            this.x = width + 50;
+            this.y = Math.random() * (height - 300) + 100;
             this.passed = false;
         }
         draw() {
-            // الأنابيب بتأثير 3D بسيط
-            let grad = ctx.createLinearGradient(this.x, 0, this.x + this.w, 0);
-            grad.addColorStop(0, '#2ecc71');
-            grad.addColorStop(0.5, '#58d68d');
-            grad.addColorStop(1, '#27ae60');
-            
-            ctx.fillStyle = grad;
+            ctx.fillStyle = '#2ecc71';
+            ctx.strokeStyle = '#27ae60';
+            ctx.lineWidth = 3;
+
             // أنبوب علوي
             ctx.fillRect(this.x, 0, this.w, this.y);
-            ctx.strokeRect(this.x, 0, this.w, this.y);
-            // رأس الأنبوب
-            ctx.fillRect(this.x-5, this.y-20, this.w+10, 20);
-            ctx.strokeRect(this.x-5, this.y-20, this.w+10, 20);
+            ctx.strokeRect(this.x, -5, this.w, this.y + 5);
 
             // أنبوب سفلي
-            ctx.fillRect(this.x, this.y + this.gap, this.w, canvas.height);
-            ctx.strokeRect(this.x, this.y + this.gap, this.w, canvas.height);
-            // رأس الأنبوب السفلي
-            ctx.fillRect(this.x-5, this.y + this.gap, this.w+10, 20);
-            ctx.strokeRect(this.x-5, this.y + this.gap, this.w+10, 20);
+            ctx.fillRect(this.x, this.y + this.gap, this.w, height);
+            ctx.strokeRect(this.x, this.y + this.gap, this.w, height + 5);
         }
         update() {
-            this.x -= 3.5;
-            if(!this.passed && this.x + this.w < bird.x) {
+            this.x -= 3 * scale;
+            if (!this.passed && this.x + this.w < bird.x) {
                 score++;
                 this.passed = true;
                 if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
@@ -228,89 +273,80 @@
         }
     }
 
-    let pipeArray = [];
-
     function startGame() {
         gameState = 'PLAYING';
+        bird.y = height / 2;
         document.getElementById('start-screen').classList.remove('active');
         document.getElementById('live-score').style.opacity = '1';
     }
 
     function endGame() {
-        if(gameState === 'OVER') return;
+        if (gameState === 'OVER') return;
         gameState = 'OVER';
-        document.getElementById('flash-effect').classList.add('active');
-        setTimeout(() => document.getElementById('flash-effect').classList.remove('active'), 300);
-        
-        if(score > bestScore) {
+        if (score > bestScore) {
             bestScore = score;
             localStorage.setItem('bestScore', bestScore);
         }
-
         document.getElementById('final-score').innerText = score;
         document.getElementById('best-score').innerText = bestScore;
         document.getElementById('over-screen').classList.add('active');
         document.getElementById('live-score').style.opacity = '0';
-        
         if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
     }
 
     function resetGame() {
-        score = 0; pipeArray = []; bird.y = canvas.height/2; bird.velocity = 0;
-        frames = 0;
+        pipes = [];
+        score = 0;
+        bird.velocity = 0;
+        bird.y = height / 2;
+        gameState = 'PLAYING';
         document.getElementById('over-screen').classList.remove('active');
         document.getElementById('live-score').innerText = '0';
-        gameState = 'PLAYING';
         document.getElementById('live-score').style.opacity = '1';
     }
 
-    window.addEventListener('touchstart', (e) => {
-        if(gameState === 'PLAYING') bird.velocity = -bird.jump;
+    // التحكم باللمس الشامل
+    const handleAction = (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        if (gameState === 'PLAYING') bird.velocity = bird.jump;
+        if (gameState === 'START') startGame();
+        e.preventDefault();
+    };
+
+    window.addEventListener('touchstart', handleAction, { passive: false });
+    window.addEventListener('mousedown', (e) => {
+        if (e.button === 0) handleAction(e);
     });
 
-    function drawBackground() {
-        // سماء متدرجة
-        let sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        sky.addColorStop(0, '#4facfe');
-        sky.addColorStop(1, '#00f2fe');
-        ctx.fillStyle = sky;
-        ctx.fillRect(0,0, canvas.width, canvas.height);
-
-        // غيوم بسيطة تتحرك
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        for(let i=0; i<5; i++) {
-            let x = (frames * (i+1) * 0.5) % (canvas.width + 200) - 100;
-            ctx.beginPath(); ctx.arc(x, 100 + i*50, 30, 0, Math.PI*2); ctx.fill();
-        }
-
-        // الأرضية
-        ctx.fillStyle = '#e1d995';
-        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(0, canvas.height - 60, canvas.width, 10);
-    }
-
     function loop() {
-        drawBackground();
+        ctx.clearRect(0, 0, width, height);
 
-        if(gameState === 'PLAYING') {
-            if(frames % 90 === 0) pipeArray.push(new Pipe());
-            pipeArray.forEach((p, i) => {
+        // رسم الخلفية
+        ctx.fillStyle = '#70c5ce';
+        ctx.fillRect(0, 0, width, height);
+
+        if (gameState === 'PLAYING') {
+            if (frames % Math.floor(90 / scale) === 0) pipes.push(new Pipe());
+            pipes.forEach((p, i) => {
                 p.update();
                 p.draw();
-                // تصادم دقيق
-                if(bird.x + 15 > p.x && bird.x - 15 < p.x + p.w) {
-                    if(bird.y - 10 < p.y || bird.y + 10 > p.y + p.gap) endGame();
+                // تصادم
+                if (bird.x + 12 > p.x && bird.x - 12 < p.x + p.w) {
+                    if (bird.y - 10 < p.y || bird.y + 10 > p.y + p.gap) endGame();
                 }
             });
-            if(pipeArray.length > 0 && pipeArray[0].x < -100) pipeArray.shift();
+            if (pipes.length > 0 && pipes[0].x < -100) pipes.shift();
             document.getElementById('live-score').innerText = score;
-        } else if (gameState === 'START' || gameState === 'OVER') {
-            // رسم أنابيب ثابتة للجمالية
         }
 
         bird.update();
         bird.draw();
+
+        // رسم الأرضية
+        ctx.fillStyle = '#e1d995';
+        ctx.fillRect(0, height - 60, width, 60);
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(0, height - 70, width, 10);
 
         frames++;
         requestAnimationFrame(loop);
