@@ -1,234 +1,336 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- مكتبة Socket.IO للاتصال بالسيرفر -->
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<title>Codenames</title>
-<style>
-    :root { --bg: #111; --red: #e74c3c; --blue: #3498db; --neutral: #dcdcdc; --black: #2c3e50; }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Tahoma', sans-serif; }
-    body { margin: 0; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-    /* Dashboard */
-    .dashboard { height: 25%; display: flex; padding: 5px; gap: 5px; background: #222; }
-    .team-col { flex: 1; border-radius: 8px; padding: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; opacity: 0.5; border: 2px solid transparent; }
-    .team-red { background: linear-gradient(45deg, #5c241e, #922b21); }
-    .team-blue { background: linear-gradient(45deg, #1a3c52, #21618c); }
-    .active { opacity: 1; transform: scale(1.02); border-color: #fff; }
-    .score { font-size: 1.8rem; font-weight: bold; }
-    .role-btn { font-size: 0.6rem; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 10px; margin-top: 2px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); width: 100%; text-align: center; }
-    .role-btn.taken { background: #7ed321; color: black; border-color: #7ed321; }
-
-    /* Logs */
-    .logs { height: 12%; background: #1a1a1a; overflow-y: auto; font-size: 0.7rem; padding: 5px; border-top: 1px solid #333; border-bottom: 1px solid #333; }
-    .log-item { margin-bottom: 2px; }
-
-    /* Grid */
-    .grid { flex: 1; padding: 5px; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; }
-    .card { 
-        background: var(--neutral); color: #333; border-radius: 4px; 
-        display: flex; justify-content: center; align-items: center; 
-        text-align: center; font-weight: bold; font-size: 0.65rem; 
-        cursor: pointer; position: relative; transition: 0.3s;
-        box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
-    }
-    
-    .card.revealed { color: white !important; cursor: default; transform: rotateY(180deg); }
-    .card.revealed.red { background: var(--red); }
-    .card.revealed.blue { background: var(--blue); }
-    .card.revealed.black { background: var(--black); border: 2px solid white; }
-    .card.revealed.neutral { background: #95a5a6; color: #eee !important; opacity: 0.4; }
-
-    /* Spymaster View */
-    .spy-view .card:not(.revealed).red { border: 3px solid var(--red); background: #333; color: var(--red); }
-    .spy-view .card:not(.revealed).blue { border: 3px solid var(--blue); background: #333; color: var(--blue); }
-    .spy-view .card:not(.revealed).black { border: 3px solid #777; background: #000; color: #aaa; }
-    .spy-view .card:not(.revealed).neutral { border: 1px dashed #555; background: #222; color: #777; }
-
-    /* Controls */
-    .controls { height: 12%; background: #252525; padding: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-    input, select { padding: 10px; border-radius: 20px; border: none; text-align: center; outline: none; }
-    input { flex: 1; background: #fff; color: #000; }
-    button { padding: 10px 20px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; color: white; }
-    .btn-go { background: #2ecc71; }
-    .btn-pass { background: #e74c3c; width: 100%; }
-    .hidden { display: none !important; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+    <title>Cyber Run: Perfect Balance</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@800&display=swap');
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        body { background-color: #050505; margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; }
+        #game-container { position: relative; width: 100%; flex: 1; background: #111; display: flex; justify-content: center; align-items: center; border-bottom: 4px solid #333; }
+        canvas { display: block; image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain; }
+        .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; color: #fff; text-shadow: 2px 2px 0 #000; font-size: 16px; }
+        .bar { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 4px; border: 1px solid #555; }
+        .dev-credit { position: absolute; bottom: 5px; right: 10px; font-family: monospace; font-size: 12px; color: rgba(255, 255, 255, 0.4); pointer-events: none; z-index: 15; font-weight: bold; }
+        #controls { height: 160px; background: #16161d; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; position: relative; box-shadow: inset 0 10px 20px rgba(0,0,0,0.5); }
+        .btn-group { position: relative; width: 150px; height: 150px; }
+        .btn { position: absolute; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.5); font-size: 24px; transition: background 0.1s, transform 0.1s; }
+        .btn:active, .btn.pressed { background: rgba(255, 255, 255, 0.3); transform: scale(0.95); color: #fff; border-color: #fff; }
+        .left { top: 50px; left: 0; width: 60px; height: 50px; }
+        .right { top: 50px; left: 70px; width: 60px; height: 50px; }
+        .btn-circle { border-radius: 50%; width: 70px; height: 70px; font-weight: bold; font-size: 18px; box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
+        .btn-circle:active, .btn-circle.pressed { transform: translateY(5px); box-shadow: none; }
+        .jump { bottom: 20px; left: 0; background: #00bcd4; color: #000; }
+        .fire { top: 20px; right: 0; background: #ff4081; color: #fff; }
+        .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 20; display: none; text-align: center; }
+        .start-btn { padding: 15px 40px; background: #ff4081; color: white; border: none; font-size: 20px; border-radius: 8px; margin-top: 20px; font-family: 'Cairo'; cursor: pointer; box-shadow: 0 5px #d81b60; }
+        .start-btn:active { transform: translateY(4px); box-shadow: 0 1px #d81b60; }
+        .dev-title { color: #00bcd4; font-size: 14px; margin-top: 10px; font-family: monospace; opacity: 0.8; }
+    </style>
 </head>
 <body>
 
-<div class="dashboard">
-    <div id="team-red" class="team-col team-red">
-        <div class="score" id="score-red">0</div>
-        <div class="role-btn" id="btn-red_spy" onclick="joinRole('red_spy')">قائد أحمر</div>
-        <div class="role-btn" id="btn-red_op" onclick="joinRole('red_op')">عميل أحمر</div>
-    </div>
-    <div id="team-blue" class="team-col team-blue">
-        <div class="score" id="score-blue">0</div>
-        <div class="role-btn" id="btn-blue_spy" onclick="joinRole('blue_spy')">قائد أزرق</div>
-        <div class="role-btn" id="btn-blue_op" onclick="joinRole('blue_op')">عميل أزرق</div>
-    </div>
-</div>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="hud">
+            <div class="bar" style="border-color:#ff4081">❤️ <span id="hp">100</span></div>
+            <div class="bar" style="border-color:#00bcd4">🚩 <span id="level">1</span></div>
+        </div>
+        <div class="dev-credit">Dev: @Lab_Dr</div>
 
-<div class="logs" id="logs"></div>
-<div class="grid" id="grid"></div>
+        <div id="startScreen" class="overlay" style="display:flex;">
+            <h1 style="color:#fff; font-size:40px; margin:0; text-shadow: 0 0 10px #00bcd4;">CYBER RUN</h1>
+            <div class="dev-title">By: @Lab_Dr</div>
+            <p style="color:#aaa; font-size:14px; margin-top:30px;">المستوى المتوازن</p>
+            <button class="start-btn" onclick="startGame()">ابــدأ</button>
+        </div>
 
-<div class="controls">
-    <div id="start-btn" class="hidden"><button class="btn-go" onclick="sendAction('start')">اضغط لبدء اللعبة</button></div>
-    <div id="spy-controls" class="hidden" style="display:flex; width:100%; gap:5px;">
-        <input type="text" id="clueTxt" placeholder="تلميح">
-        <select id="clueNum"><option>1</option><option>2</option><option>3</option><option>∞</option></select>
-        <button class="btn-go" onclick="sendClue()">إرسال</button>
+        <div id="gameOverScreen" class="overlay">
+            <h1 style="color:#ff4081">خسرت!</h1>
+            <button class="start-btn" onclick="location.reload()">إعادة</button>
+        </div>
+        <div id="winScreen" class="overlay">
+            <h1 style="color:#00bcd4">مبروك الفوز!</h1>
+            <button class="start-btn" onclick="location.reload()">لعب مجدداً</button>
+        </div>
     </div>
-    <div id="op-controls" class="hidden" style="width:100%">
-        <button class="btn-pass" onclick="sendAction('pass')">إنهاء الدور</button>
+
+    <div id="controls">
+        <div class="btn-group">
+            <div class="btn left" data-action="left">◀</div>
+            <div class="btn right" data-action="right">▶</div>
+        </div>
+        <div class="btn-group">
+            <div class="btn btn-circle jump" data-action="jump">قفز</div>
+            <div class="btn btn-circle fire" data-action="fire">نار</div>
+        </div>
     </div>
-    <div id="wait-msg" style="color:#777; font-size:0.8rem;">...</div>
-</div>
 
 <script>
-    // قراءة رابط السيرفر من رابط الصفحة الذي أرسله البوت
-    const urlParams = new URLSearchParams(window.location.search);
-    const ROOM_ID = urlParams.get('r');
-    const SERVER_URL = urlParams.get('host'); // البوت يرسل هذا الرابط تلقائياً
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const GW = 320; const GH = 180;
+canvas.width = GW; canvas.height = GH;
 
-    let socket;
-    let tgUser = {id: Math.floor(Math.random()*100000), first_name: 'Guest'};
-    let gameState = null;
-    let myRole = null;
+// التحكم
+const Input = { left: false, right: false, jump: false, fire: false };
+document.querySelectorAll('[data-action]').forEach(btn => {
+    const act = btn.dataset.action;
+    const press = (e) => { e.preventDefault(); Input[act] = true; btn.classList.add('pressed'); };
+    const release = (e) => { e.preventDefault(); Input[act] = false; btn.classList.remove('pressed'); };
+    btn.addEventListener('touchstart', press); btn.addEventListener('touchend', release);
+    btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release); btn.addEventListener('mouseleave', release);
+});
+window.addEventListener('keydown', e => {
+    if(e.code==='ArrowLeft') Input.left=true; if(e.code==='ArrowRight') Input.right=true;
+    if(e.code==='Space'||e.code==='ArrowUp') Input.jump=true; if(e.code==='KeyX'||e.code==='ControlLeft') Input.fire=true;
+});
+window.addEventListener('keyup', e => {
+    if(e.code==='ArrowLeft') Input.left=false; if(e.code==='ArrowRight') Input.right=false;
+    if(e.code==='Space'||e.code==='ArrowUp') Input.jump=false; if(e.code==='KeyX'||e.code==='ControlLeft') Input.fire=false;
+});
 
-    // تهيئة تليجرام
-    if (window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-        if(window.Telegram.WebApp.initDataUnsafe.user) 
-            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+// الفيزياء
+const TILE = 16;
+const GRAVITY = 0.55;     // جاذبية متوسطة
+const FRICTION = 0.85;
+const MOVE_ACCEL = 0.6;
+const MAX_SPEED = 2.3;
+const JUMP_FORCE = -8.5;
+
+let GameState = 'MENU'; 
+let currentLevel = 0;
+
+// الخرائط (1:جدار، 2:شوك، 3:بوابة، 9:عدو)
+const LEVELS = [
+    // L1: تعليمي
+    [
+        "1111111111111111111111111111111111111111",
+        "1000000000000000000000000000000000000001",
+        "1000000000000000000000000000000000000001",
+        "10S0000000000000000000000900000000000031",
+        "1111100000000000011111000000011111000111",
+        "1111100000110000000000000000000000000001",
+        "1111100111111110000000000111000000002221",
+        "1111100000000000000009000111000000111111",
+        "1111122221111122222111111111222221111111"
+    ],
+    // L2: متوسط الصعوبة (منصات متباعدة بشكل معقول)
+    [
+        "111111111111111111111111111111111111111111111",
+        "100000000000000000000000000000000000000000001",
+        "10S000000000000000000000000000000000000000001",
+        "111111000000000000000000000000000000000000001",
+        "100000011100000000111100000000110000000000031", // منصات
+        "100000000000000000000000000000000000000011111", // القاعدة الأخيرة
+        "100000000000110000900000110000000009000000001", // أعداء في الطريق
+        "111111222221111122222211111222221111122222221"  // أشواك في الأسفل
+    ]
+];
+
+let cam = { x: 0, y: 0 };
+let player, enemies=[], bullets=[], particles=[], map=[], screenShake=0;
+
+class Player {
+    constructor(x, y) {
+        // العرض 10 بكسل فقط لتسهيل المرور
+        this.x = x; this.y = y; this.w = 10; this.h = 16;
+        this.vx = 0; this.vy = 0; this.grounded = false;
+        this.facing = 1; this.hp = 100; this.invuln = 0; this.animFrame = 0;
     }
 
-    if (SERVER_URL && ROOM_ID) {
-        // الاتصال بالسيرفر
-        socket = io(SERVER_URL);
+    update() {
+        if (Input.left) { this.vx -= MOVE_ACCEL; this.facing = -1; }
+        else if (Input.right) { this.vx += MOVE_ACCEL; this.facing = 1; }
+        else { this.vx *= FRICTION; }
+        this.vx = Math.max(Math.min(this.vx, MAX_SPEED), -MAX_SPEED);
+
+        if (Input.jump && this.grounded) { this.vy = JUMP_FORCE; this.grounded = false; }
         
-        socket.on('connect', () => {
-            socket.emit('join_game', { room: ROOM_ID, uid: tgUser.id });
-        });
+        this.vy += GRAVITY;
+        this.moveX();
+        this.moveY();
+        this.checkHazards();
 
-        socket.on('update', (data) => {
-            gameState = data;
-            render();
-        });
-    } else {
-        document.body.innerHTML = "<h3 style='text-align:center;color:white;margin-top:50px'>الرجاء فتح اللعبة من البوت</h3>";
+        if(this.y > GH + 50) this.hurt(100);
+        if(this.invuln > 0) this.invuln--;
+        document.getElementById('hp').innerText = this.hp;
+
+        if(Math.abs(this.vx)>0.1) this.animFrame+=0.2; else this.animFrame=0;
     }
 
-    // --- Logic ---
-    function joinRole(role) {
-        socket.emit('action', { 
-            room: ROOM_ID, type: 'join_role', 
-            role: role, uid: tgUser.id, name: tgUser.first_name 
-        });
-    }
-
-    function sendAction(type, extra={}) {
-        socket.emit('action', { room: ROOM_ID, type: type, ...extra });
-    }
-
-    function sendClue() {
-        const txt = document.getElementById('clueTxt').value;
-        const num = document.getElementById('clueNum').value;
-        if(!txt) return;
-        sendAction('clue', { text: txt, num: num });
-        document.getElementById('clueTxt').value = '';
-    }
-
-    function clickCard(i) {
-        // تحقق سريع
-        if(!myRole || !myRole.includes('op')) return;
-        const myTeam = myRole.split('_')[0];
-        if(gameState.turn !== myTeam || gameState.phase !== 'op') return;
-        
-        sendAction('click', { idx: i });
-    }
-
-    function render() {
-        // 1. Scores & Active Team
-        document.getElementById('score-red').innerText = gameState.scores.red;
-        document.getElementById('score-blue').innerText = gameState.scores.blue;
-        document.getElementById('team-red').className = `team-col team-red ${gameState.turn==='red'?'active':''}`;
-        document.getElementById('team-blue').className = `team-col team-blue ${gameState.turn==='blue'?'active':''}`;
-
-        // 2. Roles
-        myRole = null;
-        for (const [role, player] of Object.entries(gameState.players)) {
-            const btn = document.getElementById(`btn-${role}`);
-            if (player) {
-                btn.innerText = player.name;
-                btn.classList.add('taken');
-                if(player.id === tgUser.id) myRole = role;
-            } else {
-                btn.innerText = role.includes('spy') ? 'قائد' : 'عميل';
-                btn.classList.remove('taken');
+    moveX() {
+        this.x += this.vx;
+        if(this.vx > 0) {
+            if(isSolid(this.x+this.w, this.y) || isSolid(this.x+this.w, this.y+this.h-1)) {
+                this.x = (Math.floor((this.x+this.w)/TILE)*TILE)-this.w-0.1; this.vx=0;
+            }
+        } else if(this.vx < 0) {
+            if(isSolid(this.x, this.y) || isSolid(this.x, this.y+this.h-1)) {
+                this.x = (Math.floor(this.x/TILE)+1)*TILE+0.1; this.vx=0;
             }
         }
+    }
 
-        // 3. Spymaster View
-        if (myRole && myRole.includes('spy')) document.body.classList.add('spy-view');
-        else document.body.classList.remove('spy-view');
-
-        // 4. Grid
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '';
-        gameState.cards.forEach((c, i) => {
-            const div = document.createElement('div');
-            div.className = `card ${c.type} ${c.revealed ? 'revealed' : ''}`;
-            div.innerText = c.word;
-            if(c.revealed && c.type==='black') div.innerText = "☠️";
-            div.onclick = () => clickCard(i);
-            grid.appendChild(div);
-        });
-
-        // 5. Controls
-        const spyControls = document.getElementById('spy-controls');
-        const opControls = document.getElementById('op-controls');
-        const startBtn = document.getElementById('start-btn');
-        const waitMsg = document.getElementById('wait-msg');
-        
-        spyControls.classList.add('hidden');
-        opControls.classList.add('hidden');
-        startBtn.classList.add('hidden');
-        waitMsg.classList.remove('hidden');
-        waitMsg.innerText = "انتظر دورك...";
-
-        if (!gameState.started) {
-            waitMsg.innerText = "بانتظار اكتمال اللاعبين...";
-            // زر البدء يظهر لأي شخص إذا لم تبدأ
-            startBtn.classList.remove('hidden');
-        } else if (myRole) {
-            const myTeam = myRole.split('_')[0];
-            const roleType = myRole.split('_')[1];
-            
-            if (gameState.turn === myTeam) {
-                if (gameState.phase === 'spy' && roleType === 'spy') {
-                    spyControls.classList.remove('hidden');
-                    waitMsg.classList.add('hidden');
-                } else if (gameState.phase === 'op' && roleType === 'op') {
-                    opControls.classList.remove('hidden');
-                    waitMsg.classList.add('hidden');
-                }
+    moveY() {
+        this.y += this.vy; this.grounded = false;
+        if(this.vy > 0) {
+            if(isSolid(this.x, this.y+this.h) || isSolid(this.x+this.w-0.1, this.y+this.h)) {
+                this.y = (Math.floor((this.y+this.h)/TILE)*TILE)-this.h-0.1;
+                this.vy = 0; this.grounded = true;
+            }
+        } else if(this.vy < 0) {
+            if(isSolid(this.x, this.y) || isSolid(this.x+this.w-0.1, this.y)) {
+                this.y = (Math.floor(this.y/TILE)+1)*TILE+0.1; this.vy=0;
             }
         }
-
-        // 6. Logs
-        const logs = document.getElementById('logs');
-        logs.innerHTML = gameState.logs.map(l => {
-            const color = l.team==='red'?'#e74c3c':'#3498db';
-            if(l.type === 'clue') return `<div style="color:${color}">💡 ${l.text} (${l.num})</div>`;
-            return `<div>🎯 كشف: ${l.word}</div>`;
-        }).join('');
     }
+
+    checkHazards() {
+        // الشوك
+        const hitSpike = getTileAt(this.x+2, this.y+2)===2 || getTileAt(this.x+this.w-2, this.y+2)===2 ||
+                         getTileAt(this.x+2, this.y+this.h-2)===2 || getTileAt(this.x+this.w-2, this.y+this.h-2)===2;
+        if(hitSpike) this.hurt(15);
+        
+        // البوابة (فحص التلامس وليس المركز فقط)
+        const hitPortal = getTileAt(this.x, this.y)===3 || getTileAt(this.x+this.w, this.y)===3 ||
+                          getTileAt(this.x, this.y+this.h)===3 || getTileAt(this.x+this.w, this.y+this.h)===3;
+        if(hitPortal) loadLevel(currentLevel+1);
+    }
+
+    hurt(amount) {
+        if(this.invuln > 0) return;
+        this.hp -= amount; this.invuln = 40; this.vy = -6; screenShake = 5;
+        if(this.hp <= 0) gameOver();
+    }
+
+    draw() {
+        if(this.invuln > 0 && Math.floor(Date.now()/50)%2==0) return;
+        ctx.fillStyle = '#00bcd4'; 
+        let lo = Math.sin(this.animFrame)*3;
+        ctx.fillRect(this.x, this.y, this.w, this.h-4);
+        ctx.fillRect(this.x+1, this.y+12+lo, 3, 4); ctx.fillRect(this.x+6, this.y+12-lo, 3, 4);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(this.x+(this.facing==1?6:2), this.y+4, 2, 2);
+    }
+}
+
+class Enemy {
+    constructor(x,y){this.x=x;this.y=y;this.w=16;this.h=16;this.vx=1;this.hp=3;this.sX=x;}
+    update(){
+        this.x+=this.vx;
+        if(Math.abs(this.x-this.sX)>50 || isSolid(this.x+(this.vx>0?16:0), this.y+8)) this.vx*=-1;
+    }
+    draw(){
+        ctx.fillStyle='#ff4081'; ctx.fillRect(this.x,this.y,16,16);
+        ctx.fillStyle='#000'; ctx.fillRect(this.x+3,this.y+4,2,4); ctx.fillRect(this.x+11,this.y+4,2,4);
+    }
+}
+class Bullet{
+    constructor(x,y,d){this.x=x;this.y=y;this.vx=d*8;this.life=60;}
+    update(){this.x+=this.vx;this.life--;}
+    draw(){ctx.fillStyle='#ffff00';ctx.fillRect(this.x,this.y,6,2);}
+}
+
+function startGame() {
+    document.getElementById('startScreen').style.display = 'none';
+    currentLevel=0; loadLevel(currentLevel); GameState='PLAY'; loop();
+}
+function loadLevel(idx) {
+    if(idx >= LEVELS.length) { GameState='WIN'; document.getElementById('winScreen').style.display='flex'; return; }
+    currentLevel=idx; document.getElementById('level').innerText=idx+1;
+    enemies=[]; bullets=[]; particles=[]; map=[];
+    const layout = LEVELS[idx];
+    for(let y=0; y<layout.length; y++) {
+        let row=[];
+        for(let x=0; x<layout[y].length; x++) {
+            let c=layout[y][x];
+            if(c==='S'){player=new Player(x*TILE,y*TILE); row.push(0);}
+            else if(c==='9'){enemies.push(new Enemy(x*TILE,y*TILE)); row.push(0);}
+            else row.push(parseInt(c));
+        }
+        map.push(row);
+    }
+}
+
+function isSolid(x, y) {
+    let tx=Math.floor(x/TILE), ty=Math.floor(y/TILE);
+    if(ty<0||ty>=map.length||tx<0||tx>=map[0].length) return false;
+    return map[ty][tx] === 1;
+}
+
+function getTileAt(x, y) {
+    let tx=Math.floor(x/TILE), ty=Math.floor(y/TILE);
+    if(ty<0||ty>=map.length||tx<0||tx>=map[0].length) return 0;
+    return map[ty][tx];
+}
+
+function gameOver(){ GameState='GAMEOVER'; document.getElementById('gameOverScreen').style.display='flex'; }
+
+function update() {
+    if(GameState!=='PLAY') return;
+    player.update();
+
+    if(Input.fire && (!player.lastShot || Date.now()-player.lastShot>200)) {
+        bullets.push(new Bullet(player.x+(player.facing>0?12:0), player.y+6, player.facing));
+        player.lastShot=Date.now(); screenShake=2;
+    }
+
+    for(let i=bullets.length-1; i>=0; i--) {
+        let b=bullets[i]; b.update();
+        if(isSolid(b.x, b.y) || b.life<=0){ bullets.splice(i,1); continue; }
+        for(let j=enemies.length-1; j>=0; j--){
+            let e=enemies[j];
+            if(b.x>e.x && b.x<e.x+16 && b.y>e.y && b.y<e.y+16){
+                e.hp--; bullets.splice(i,1);
+                if(e.hp<=0) enemies.splice(j,1); break;
+            }
+        }
+    }
+
+    enemies.forEach(e => {
+        e.update();
+        if(player.x<e.x+14 && player.x+player.w>e.x+2 && player.y<e.y+14 && player.y+player.h>e.y+2) player.hurt(15);
+    });
+
+    for(let i=particles.length-1; i>=0; i--) {
+        let p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--;
+        if(p.life<=0) particles.splice(i,1);
+    }
+
+    let tx = player.x-GW/2, ty = player.y-GH/2;
+    cam.x+=(tx-cam.x)*0.1; cam.y+=(ty-cam.y)*0.1;
+    if(screenShake>0) screenShake*=0.9; if(screenShake<0.5) screenShake=0;
+}
+
+function draw() {
+    ctx.fillStyle='#1a1a20'; ctx.fillRect(0,0,GW,GH);
+    ctx.save();
+    let sx=(Math.random()-0.5)*screenShake, sy=(Math.random()-0.5)*screenShake;
+    ctx.translate(-Math.floor(cam.x)+sx, -Math.floor(cam.y)+sy);
+
+    for(let y=0; y<map.length; y++) {
+        for(let x=0; x<map[y].length; x++) {
+            let t=map[y][x]; if(t===0) continue;
+            let px=x*TILE, py=y*TILE;
+            if(px<cam.x-TILE || px>cam.x+GW) continue;
+            if(t===1) {
+                ctx.fillStyle='#444455'; ctx.fillRect(px,py,TILE,TILE);
+                ctx.fillStyle='#222233'; ctx.fillRect(px,py+TILE-2,TILE,2); ctx.fillRect(px+TILE-2,py,2,TILE);
+            } else if(t===2) {
+                ctx.fillStyle='#888'; ctx.beginPath(); ctx.moveTo(px,py+TILE); ctx.lineTo(px+8,py); ctx.lineTo(px+16,py+TILE); ctx.fill();
+            } else if(t===3) {
+                ctx.fillStyle='#00ff00'; ctx.fillRect(px,py,TILE,TILE);
+            }
+        }
+    }
+    player.draw(); enemies.forEach(e=>e.draw()); bullets.forEach(b=>b.draw());
+    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life/20; ctx.fillRect(p.x, p.y, 2, 2); });
+    ctx.globalAlpha = 1; ctx.restore();
+}
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loadLevel(0); draw();
 </script>
 </body>
 </html>
