@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Draw Pro Neon</title>
+    <!-- استدعاء مكتبة تيليجرام -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -150,27 +151,23 @@
             z-index: 10000;
         }
 
+        /* تنسيق زر التحميل المميز */
         #btnSend {
             background: linear-gradient(135deg, #00f2ff, #0066ff);
             border: none;
             color: white;
             font-weight: bold;
             box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
-            width: 100px;
+            width: auto; /* عرض تلقائي للنص */
+            min-width: 120px;
+            padding: 0 15px;
             border-radius: 15px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
         }
-
-        /* لودر التحميل */
-        .loader {
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 3px solid #fff;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: none;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -208,9 +205,9 @@
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>
             </div>
             
+            <!-- الزر الذي يتغير حسب المكان -->
             <div class="circle-switch" id="btnSend">
-                <span id="txtSend">حفظ</span>
-                <div class="loader" id="loader"></div>
+                <span id="btnText">فتح في المتصفح</span>
             </div>
         </div>
     </div>
@@ -223,10 +220,6 @@
     </div>
 
     <script>
-        // ⬇⬇⬇⬇⬇⬇ ضع توكن البوت هنا ليعمل زر الحفظ ⬇⬇⬇⬇⬇⬇
-        const BOT_TOKEN = "ضع_توكن_البوت_الخاص_بك_هنا"; 
-        // ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
-
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -245,17 +238,43 @@
         let activeShape = 'square';
         let zoom = 1;
 
+        // دالة لفحص هل نحن داخل تيليجرام أم في المتصفح
+        function isTelegram() {
+            return (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData.length > 0);
+        }
+
         function init() {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             saveState();
+
+            // ⚡ السحر هنا: فحص وجود رسمة محفوظة مسبقاً لاستعادتها ⚡
+            const savedDrawing = localStorage.getItem('drawProNeon_temp');
+            if (savedDrawing && !isTelegram()) {
+                const img = new Image();
+                img.src = savedDrawing;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    // مسحها حتى لا تظهر دائماً
+                    localStorage.removeItem('drawProNeon_temp');
+                };
+            }
+
+            // تحديث نص الزر بناءً على المكان
+            const btnText = document.getElementById('btnText');
+            if (isTelegram()) {
+                btnText.innerText = "فتح للتحميل 🔗";
+            } else {
+                btnText.innerText = "تحميل الصورة 📥";
+            }
         }
 
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
+            const touch = e.touches[0] || e;
             return {
                 x: (touch.clientX - rect.left) * (canvas.width / rect.width),
                 y: (touch.clientY - rect.top) * (canvas.height / rect.height)
@@ -426,62 +445,29 @@
         };
 
         // -------------------------------------------------------------------
-        //  الحل الجذري: إرسال الصورة للبوت مباشرة باستخدام API
+        //  الجسر الذكي: ينقل الصورة للمتصفح الخارجي ثم يحملها
         // -------------------------------------------------------------------
         document.getElementById('btnSend').onclick = () => {
-            if (BOT_TOKEN === "8244172704:AAEsCsOKkZV5085zh2mUB15OrwmC8hx0nS8") {
-                alert("خطأ: يرجى وضع توكن البوت في الكود أولاً!");
-                return;
+            const dataUrl = canvas.toDataURL('image/png');
+
+            if (isTelegram()) {
+                // 1. إذا كنا في تيليجرام: احفظ الصورة وانتقل للمتصفح
+                try {
+                    localStorage.setItem('drawProNeon_temp', dataUrl);
+                    // فتح نفس الرابط في المتصفح الخارجي
+                    tg.openLink(window.location.href);
+                } catch (e) {
+                    alert("عذراً، لا يمكن الانتقال للمتصفح من هذا الجهاز.");
+                }
+            } else {
+                // 2. إذا كنا في المتصفح: حمل الصورة مباشرة
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'my-drawing-' + Date.now() + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
-
-            const userId = tg.initDataUnsafe?.user?.id;
-            if (!userId) {
-                alert("يرجى فتح التطبيق من داخل تيليجرام ليعمل الحفظ.");
-                return;
-            }
-
-            const btn = document.getElementById('btnSend');
-            const txt = document.getElementById('txtSend');
-            const loader = document.getElementById('loader');
-
-            // تفعيل اللودر
-            btn.style.pointerEvents = "none";
-            txt.style.display = "none";
-            loader.style.display = "block";
-
-            canvas.toBlob((blob) => {
-                const formData = new FormData();
-                formData.append('chat_id', userId);
-                formData.append('photo', blob, 'drawing.png');
-                formData.append('caption', '🎨 رسمتك الجديدة');
-
-                // نستخدم CorsProxy لتخطي حظر تيليجرام للطلبات من المتصفح
-                fetch('https://corsproxy.io/?' + encodeURIComponent(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`), {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.ok) {
-                        tg.showPopup({
-                            title: "تم الحفظ",
-                            message: "تم إرسال الرسمة إلى الشات بنجاح! ✅",
-                            buttons: [{type: "ok"}]
-                        });
-                        tg.close();
-                    } else {
-                        alert("حدث خطأ: " + data.description);
-                    }
-                })
-                .catch(err => {
-                    alert("فشل الاتصال: " + err);
-                })
-                .finally(() => {
-                    btn.style.pointerEvents = "auto";
-                    txt.style.display = "block";
-                    loader.style.display = "none";
-                });
-            }, 'image/png');
         };
 
         tempCanvas.addEventListener('touchstart', (e) => {
@@ -493,6 +479,11 @@
         });
         tempCanvas.addEventListener('touchmove', move);
         tempCanvas.addEventListener('touchend', end);
+
+        // لإضافة دعم الماوس (للكمبيوتر)
+        tempCanvas.addEventListener('mousedown', start);
+        tempCanvas.addEventListener('mousemove', move);
+        tempCanvas.addEventListener('mouseup', end);
 
         init();
     </script>
