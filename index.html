@@ -1,336 +1,435 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-    <title>Cyber Run: Perfect Balance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Draw Pro Neon</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@800&display=swap');
-        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        body { background-color: #050505; margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; }
-        #game-container { position: relative; width: 100%; flex: 1; background: #111; display: flex; justify-content: center; align-items: center; border-bottom: 4px solid #333; }
-        canvas { display: block; image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain; }
-        .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; pointer-events: none; z-index: 10; color: #fff; text-shadow: 2px 2px 0 #000; font-size: 16px; }
-        .bar { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 4px; border: 1px solid #555; }
-        .dev-credit { position: absolute; bottom: 5px; right: 10px; font-family: monospace; font-size: 12px; color: rgba(255, 255, 255, 0.4); pointer-events: none; z-index: 15; font-weight: bold; }
-        #controls { height: 160px; background: #16161d; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; position: relative; box-shadow: inset 0 10px 20px rgba(0,0,0,0.5); }
-        .btn-group { position: relative; width: 150px; height: 150px; }
-        .btn { position: absolute; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.5); font-size: 24px; transition: background 0.1s, transform 0.1s; }
-        .btn:active, .btn.pressed { background: rgba(255, 255, 255, 0.3); transform: scale(0.95); color: #fff; border-color: #fff; }
-        .left { top: 50px; left: 0; width: 60px; height: 50px; }
-        .right { top: 50px; left: 70px; width: 60px; height: 50px; }
-        .btn-circle { border-radius: 50%; width: 70px; height: 70px; font-weight: bold; font-size: 18px; box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
-        .btn-circle:active, .btn-circle.pressed { transform: translateY(5px); box-shadow: none; }
-        .jump { bottom: 20px; left: 0; background: #00bcd4; color: #000; }
-        .fire { top: 20px; right: 0; background: #ff4081; color: #fff; }
-        .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 20; display: none; text-align: center; }
-        .start-btn { padding: 15px 40px; background: #ff4081; color: white; border: none; font-size: 20px; border-radius: 8px; margin-top: 20px; font-family: 'Cairo'; cursor: pointer; box-shadow: 0 5px #d81b60; }
-        .start-btn:active { transform: translateY(4px); box-shadow: 0 1px #d81b60; }
-        .dev-title { color: #00bcd4; font-size: 14px; margin-top: 10px; font-family: monospace; opacity: 0.8; }
+        :root {
+            --tg-theme-button-color: #00f2ff;
+            --tg-theme-button-text-color: #ffffff;
+            --bg-dark: #0f172a;
+            --neon-glow: 0 0 15px rgba(0, 242, 255, 0.6);
+            --glass: rgba(30, 41, 59, 0.8);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .board-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 10px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            overflow: hidden; 
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 95vw;
+            height: 95vw;
+            max-width: 500px;
+            max-height: 500px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5), var(--neon-glow);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            transition: transform 0.1s ease-out;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .controls {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(0, 242, 255, 0.2);
+            padding: 15px 10px 30px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 2000;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding: 5px;
+        }
+
+        .circle-switch {
+            width: 46px;
+            height: 46px;
+            min-width: 46px;
+            border-radius: 35%;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid var(--tg-theme-button-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--tg-theme-button-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .circle-switch.active {
+            background: var(--tg-theme-button-color);
+            color: #000;
+            box-shadow: var(--neon-glow);
+            transform: scale(1.1);
+        }
+
+        .circle-switch svg {
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
+        }
+
+        .thickness-panel {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--glass);
+            padding: 15px 5px;
+            border-radius: 20px;
+            border: 1px solid rgba(0,242,255,0.3);
+            z-index: 1000;
+        }
+
+        input[type="range"] {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
+            width: 8px;
+            height: 150px;
+            background: #334155;
+        }
+
+        .shape-dialog {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--tg-theme-button-color);
+            border-radius: 20px;
+            padding: 20px;
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            z-index: 10000;
+        }
+
+        #btnSend {
+            background: linear-gradient(135deg, #00f2ff, #0066ff);
+            border: none;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+            width: 100px;
+            border-radius: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div class="hud">
-            <div class="bar" style="border-color:#ff4081">❤️ <span id="hp">100</span></div>
-            <div class="bar" style="border-color:#00bcd4">🚩 <span id="level">1</span></div>
-        </div>
-        <div class="dev-credit">Dev: @Lab_Dr</div>
-
-        <div id="startScreen" class="overlay" style="display:flex;">
-            <h1 style="color:#fff; font-size:40px; margin:0; text-shadow: 0 0 10px #00bcd4;">CYBER RUN</h1>
-            <div class="dev-title">By: @Lab_Dr</div>
-            <p style="color:#aaa; font-size:14px; margin-top:30px;">المستوى المتوازن</p>
-            <button class="start-btn" onclick="startGame()">ابــدأ</button>
+    <div class="board-container">
+        <div class="thickness-panel">
+            <span style="font-size: 10px; color: var(--tg-theme-button-color); margin-bottom:5px">حجم</span>
+            <input type="range" id="sizeSlider" min="2" max="60" value="10">
         </div>
 
-        <div id="gameOverScreen" class="overlay">
-            <h1 style="color:#ff4081">خسرت!</h1>
-            <button class="start-btn" onclick="location.reload()">إعادة</button>
-        </div>
-        <div id="winScreen" class="overlay">
-            <h1 style="color:#00bcd4">مبروك الفوز!</h1>
-            <button class="start-btn" onclick="location.reload()">لعب مجدداً</button>
+        <div class="canvas-container" id="canvasWrapper">
+            <canvas id="mainCanvas" width="1000" height="1000"></canvas>
+            <canvas id="tempCanvas" width="1000" height="1000"></canvas>
         </div>
     </div>
 
-    <div id="controls">
-        <div class="btn-group">
-            <div class="btn left" data-action="left">◀</div>
-            <div class="btn right" data-action="right">▶</div>
+    <div class="controls">
+        <!-- الصف الأول: يحتوي على القلم، الممحاة، التعبئة، التراجع، والإعادة -->
+        <div class="controls-row">
+            <div class="circle-switch active" id="toolPencil"><svg viewBox="0 0 512 512"><path d="M481 31C445.1-4.8 386.9-4.8 351 31l-15 15L322.9 33C294.8 4.9 249.2 4.9 221.1 33L135 119c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0L255 66.9c9.4-9.4 24.6-9.4 33.9 0L302.1 80 186.3 195.7 316.3 325.7 481 161c35.9-35.9 35.9-94.1 0-129.9zM293.7 348.3L163.7 218.3 99.5 282.5c-48 48-80.8 109.2-94.1 175.8l-5 25c-1.6 7.9 .9 16 6.6 21.7s13.8 8.1 21.7 6.6l25-5c66.6-13.3 127.8-46.1 175.8-94.1l64.2-64.2z"/></svg></div>
+            <div class="circle-switch" id="toolEraser"><svg viewBox="0 0 512 512"><path d="M497.9 210.1l-160-160c-18.7-18.7-49.1-18.7-67.9 0l-256 256c-18.7 18.7-18.7 49.1 0 67.9l96 96c9.4 9.4 22.1 14.7 35.4 14.7H480c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12H355.9l142-142c18.8-18.8 18.8-49.2 0-68z"/></svg></div>
+            <div class="circle-switch" id="toolFill"><svg viewBox="0 0 512 512"><path d="M512 320s-64 92.7-64 128c0 35.3 28.66 64 64 64s64-28.66 64-64c0-35.3-64-128-64-128zM9.4 206.4l201-201c12.5-12.5 32.8-12.5 45.3 0l221.6 221.6c12.5 12.5 12.5 32.8 0 45.3L256 493.6c-12.5 12.5-32.8 12.5-45.3 0L9.4 271.7c-12.5-12.5-12.5-32.8 0-45.3z"/></svg></div>
+            <!-- زر التراجع Undo -->
+            <div class="circle-switch" id="btnUndo"><svg viewBox="0 0 512 512"><path d="M212.3 224.3l99 99c4.7 4.7 4.7 12.3 0 17l-22.6 22.6c-4.7 4.7-12.3 4.7-17 0l-144.2-144c-4.7-4.7-4.7-12.3 0-17l144.2-144c4.7-4.7 12.3-4.7 17 0l22.6 22.6c4.7 4.7 4.7 12.3 0 17l-99 99h235.7c6.6 0 12 5.4 12 12v32c0 6.6-5.4 12-12 12H212.3z"/></svg></div>
+            <!-- زر الإعادة Redo -->
+            <div class="circle-switch" id="btnRedo"><svg viewBox="0 0 512 512"><path d="M299.7 224.3l-99 99c-4.7 4.7-4.7 12.3 0 17l22.6 22.6c4.7 4.7 12.3 4.7 17 0l144.2-144c4.7-4.7 4.7-12.3 0-17l-144.2-144c-4.7-4.7-12.3-4.7-17 0l-22.6 22.6c-4.7 4.7-4.7 12.3 0 17l99 99H64c-6.6 0-12 5.4-12 12v32c0 6.6 5.4 12 12 12h235.7z"/></svg></div>
         </div>
-        <div class="btn-group">
-            <div class="btn btn-circle jump" data-action="jump">قفز</div>
-            <div class="btn btn-circle fire" data-action="fire">نار</div>
+
+        <!-- الصف الثاني: يحتوي على المسح، الأشكال، الألوان، زر التقريب، زر التبعيد، والإرسال -->
+        <div class="controls-row">
+            <div class="circle-switch" id="btnClear" style="border-color: #ff4444; color: #ff4444"><svg viewBox="0 0 448 512"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64s14.3 32 32 32h384c17.7 0 32-14.3 32-32s-14.3-32-32-32h-96l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32l21.2 339c1.6 25.3 22.6 45 47.9 45h246.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg></div>
+            <div class="circle-switch" id="btnShapes"><svg viewBox="0 0 512 512"><path d="M256 56L64 456h384L256 56zm0 82l138 278H118l138-278z"/></svg></div>
+            <div class="circle-switch" id="toolColor"><input type="color" id="colorPicker" value="#000000" style="width:100%; height:100%; opacity:0; cursor:pointer"><div id="colorShow" style="width:24px; height:24px; border-radius:50%; background:#000; border:1px solid #fff"></div></div>
+            
+            <!-- زر تكبير -->
+            <div class="circle-switch" id="btnZoomIn">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7h-1v2.5H6.5v1h2.5V13h1v-2.5H12.5v-1H10V7z"/></svg>
+            </div>
+            <!-- زر تصغير -->
+            <div class="circle-switch" id="btnZoomOut">
+                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>
+            </div>
+            
+            <div class="circle-switch" id="btnSend"><span>إرسال</span></div>
         </div>
     </div>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const GW = 320; const GH = 180;
-canvas.width = GW; canvas.height = GH;
+    <div id="shapeDialog" class="shape-dialog">
+        <div class="circle-switch" data-shape="square">⬜</div>
+        <div class="circle-switch" data-shape="circle">⚪</div>
+        <div class="circle-switch" data-shape="triangle">🔺</div>
+        <div class="circle-switch" data-shape="line">➖</div>
+    </div>
 
-// التحكم
-const Input = { left: false, right: false, jump: false, fire: false };
-document.querySelectorAll('[data-action]').forEach(btn => {
-    const act = btn.dataset.action;
-    const press = (e) => { e.preventDefault(); Input[act] = true; btn.classList.add('pressed'); };
-    const release = (e) => { e.preventDefault(); Input[act] = false; btn.classList.remove('pressed'); };
-    btn.addEventListener('touchstart', press); btn.addEventListener('touchend', release);
-    btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release); btn.addEventListener('mouseleave', release);
-});
-window.addEventListener('keydown', e => {
-    if(e.code==='ArrowLeft') Input.left=true; if(e.code==='ArrowRight') Input.right=true;
-    if(e.code==='Space'||e.code==='ArrowUp') Input.jump=true; if(e.code==='KeyX'||e.code==='ControlLeft') Input.fire=true;
-});
-window.addEventListener('keyup', e => {
-    if(e.code==='ArrowLeft') Input.left=false; if(e.code==='ArrowRight') Input.right=false;
-    if(e.code==='Space'||e.code==='ArrowUp') Input.jump=false; if(e.code==='KeyX'||e.code==='ControlLeft') Input.fire=false;
-});
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-// الفيزياء
-const TILE = 16;
-const GRAVITY = 0.55;     // جاذبية متوسطة
-const FRICTION = 0.85;
-const MOVE_ACCEL = 0.6;
-const MAX_SPEED = 2.3;
-const JUMP_FORCE = -8.5;
-
-let GameState = 'MENU'; 
-let currentLevel = 0;
-
-// الخرائط (1:جدار، 2:شوك، 3:بوابة، 9:عدو)
-const LEVELS = [
-    // L1: تعليمي
-    [
-        "1111111111111111111111111111111111111111",
-        "1000000000000000000000000000000000000001",
-        "1000000000000000000000000000000000000001",
-        "10S0000000000000000000000900000000000031",
-        "1111100000000000011111000000011111000111",
-        "1111100000110000000000000000000000000001",
-        "1111100111111110000000000111000000002221",
-        "1111100000000000000009000111000000111111",
-        "1111122221111122222111111111222221111111"
-    ],
-    // L2: متوسط الصعوبة (منصات متباعدة بشكل معقول)
-    [
-        "111111111111111111111111111111111111111111111",
-        "100000000000000000000000000000000000000000001",
-        "10S000000000000000000000000000000000000000001",
-        "111111000000000000000000000000000000000000001",
-        "100000011100000000111100000000110000000000031", // منصات
-        "100000000000000000000000000000000000000011111", // القاعدة الأخيرة
-        "100000000000110000900000110000000009000000001", // أعداء في الطريق
-        "111111222221111122222211111222221111122222221"  // أشواك في الأسفل
-    ]
-];
-
-let cam = { x: 0, y: 0 };
-let player, enemies=[], bullets=[], particles=[], map=[], screenShake=0;
-
-class Player {
-    constructor(x, y) {
-        // العرض 10 بكسل فقط لتسهيل المرور
-        this.x = x; this.y = y; this.w = 10; this.h = 16;
-        this.vx = 0; this.vy = 0; this.grounded = false;
-        this.facing = 1; this.hp = 100; this.invuln = 0; this.animFrame = 0;
-    }
-
-    update() {
-        if (Input.left) { this.vx -= MOVE_ACCEL; this.facing = -1; }
-        else if (Input.right) { this.vx += MOVE_ACCEL; this.facing = 1; }
-        else { this.vx *= FRICTION; }
-        this.vx = Math.max(Math.min(this.vx, MAX_SPEED), -MAX_SPEED);
-
-        if (Input.jump && this.grounded) { this.vy = JUMP_FORCE; this.grounded = false; }
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const tempCanvas = document.getElementById('tempCanvas');
+        const tctx = tempCanvas.getContext('2d');
         
-        this.vy += GRAVITY;
-        this.moveX();
-        this.moveY();
-        this.checkHazards();
+        let drawing = false;
+        let tool = 'pencil';
+        let color = '#000000';
+        let size = 10;
+        let startPos = { x: 0, y: 0 };
+        let undoStack = [];
+        let redoStack = [];
+        let activeShape = 'square';
+        let zoom = 1;
 
-        if(this.y > GH + 50) this.hurt(100);
-        if(this.invuln > 0) this.invuln--;
-        document.getElementById('hp').innerText = this.hp;
+        function init() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            saveState();
+        }
 
-        if(Math.abs(this.vx)>0.1) this.animFrame+=0.2; else this.animFrame=0;
-    }
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            return {
+                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
 
-    moveX() {
-        this.x += this.vx;
-        if(this.vx > 0) {
-            if(isSolid(this.x+this.w, this.y) || isSolid(this.x+this.w, this.y+this.h-1)) {
-                this.x = (Math.floor((this.x+this.w)/TILE)*TILE)-this.w-0.1; this.vx=0;
-            }
-        } else if(this.vx < 0) {
-            if(isSolid(this.x, this.y) || isSolid(this.x, this.y+this.h-1)) {
-                this.x = (Math.floor(this.x/TILE)+1)*TILE+0.1; this.vx=0;
+        function saveState() {
+            undoStack.push(canvas.toDataURL());
+            if (undoStack.length > 30) undoStack.shift();
+            redoStack = [];
+        }
+
+        function undo() {
+            if (undoStack.length > 1) {
+                redoStack.push(undoStack.pop());
+                const img = new Image();
+                img.src = undoStack[undoStack.length - 1];
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
             }
         }
-    }
 
-    moveY() {
-        this.y += this.vy; this.grounded = false;
-        if(this.vy > 0) {
-            if(isSolid(this.x, this.y+this.h) || isSolid(this.x+this.w-0.1, this.y+this.h)) {
-                this.y = (Math.floor((this.y+this.h)/TILE)*TILE)-this.h-0.1;
-                this.vy = 0; this.grounded = true;
-            }
-        } else if(this.vy < 0) {
-            if(isSolid(this.x, this.y) || isSolid(this.x+this.w-0.1, this.y)) {
-                this.y = (Math.floor(this.y/TILE)+1)*TILE+0.1; this.vy=0;
+        function redo() {
+            if (redoStack.length > 0) {
+                const state = redoStack.pop();
+                undoStack.push(state);
+                const img = new Image();
+                img.src = state;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
             }
         }
-    }
 
-    checkHazards() {
-        // الشوك
-        const hitSpike = getTileAt(this.x+2, this.y+2)===2 || getTileAt(this.x+this.w-2, this.y+2)===2 ||
-                         getTileAt(this.x+2, this.y+this.h-2)===2 || getTileAt(this.x+this.w-2, this.y+this.h-2)===2;
-        if(hitSpike) this.hurt(15);
+        function start(e) {
+            drawing = true;
+            startPos = getPos(e);
+            if (tool !== 'shapes' && tool !== 'fill') {
+                ctx.beginPath();
+                ctx.moveTo(startPos.x, startPos.y);
+            }
+        }
+
+        function move(e) {
+            if (!drawing) return;
+            const pos = getPos(e);
+            if (tool === 'pencil' || tool === 'eraser') {
+                ctx.strokeStyle = tool === 'eraser' ? 'white' : color;
+                ctx.lineWidth = size;
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+            } else if (tool === 'shapes') {
+                tctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawShape(tctx, startPos, pos);
+            }
+        }
+
+        function end(e) {
+            if (!drawing) return;
+            drawing = false;
+            if (tool === 'shapes') {
+                const pos = getPos(e.changedTouches ? {touches:[e.changedTouches[0]]} : e);
+                drawShape(ctx, startPos, pos);
+                tctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            saveState();
+        }
+
+        function drawShape(c, s, e) {
+            c.strokeStyle = color;
+            c.lineWidth = size;
+            c.beginPath();
+            const w = e.x - s.x;
+            const h = e.y - s.y;
+            if (activeShape === 'square') c.rect(s.x, s.y, w, h);
+            else if (activeShape === 'circle') c.arc(s.x, s.y, Math.sqrt(w*w + h*h), 0, Math.PI*2);
+            else if (activeShape === 'line') { c.moveTo(s.x, s.y); c.lineTo(e.x, e.y); }
+            else if (activeShape === 'triangle') {
+                c.moveTo(s.x + w/2, s.y);
+                c.lineTo(s.x, s.y + h);
+                c.lineTo(s.x + w, s.y + h);
+                c.closePath();
+            }
+            c.stroke();
+        }
+
+        function floodFill(x, y, fillCol) {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            const basePos = (Math.floor(y) * canvas.width + Math.floor(x)) * 4;
+            const target = [data[basePos], data[basePos+1], data[basePos+2], data[basePos+3]];
+            const fill = hexToRgb(fillCol);
+            if (target[0] === fill[0] && target[1] === fill[1] && target[2] === fill[2]) return;
+            
+            const queue = [[Math.floor(x), Math.floor(y)]];
+            while(queue.length) {
+                const [cx, cy] = queue.shift();
+                const i = (cy * canvas.width + cx) * 4;
+                if (cx < 0 || cx >= canvas.width || cy < 0 || cy >= canvas.height) continue;
+                if (data[i]===target[0] && data[i+1]===target[1] && data[i+2]===target[2]) {
+                    data[i]=fill[0]; data[i+1]=fill[1]; data[i+2]=fill[2]; data[i+3]=255;
+                    queue.push([cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]);
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.slice(1,3), 16);
+            const g = parseInt(hex.slice(3,5), 16);
+            const b = parseInt(hex.slice(5,7), 16);
+            return [r, g, b];
+        }
+
+        document.getElementById('toolPencil').onclick = () => setTool('pencil');
+        document.getElementById('toolEraser').onclick = () => setTool('eraser');
+        document.getElementById('toolFill').onclick = () => setTool('fill');
+        document.getElementById('btnUndo').onclick = undo;
+        document.getElementById('btnRedo').onclick = redo;
+        document.getElementById('btnShapes').onclick = () => {
+            const d = document.getElementById('shapeDialog');
+            d.style.display = d.style.display === 'grid' ? 'none' : 'grid';
+        };
+
+        function setTool(t) {
+            tool = t;
+            document.querySelectorAll('.circle-switch').forEach(el => el.classList.remove('active'));
+            if(t==='pencil') document.getElementById('toolPencil').classList.add('active');
+            if(t==='eraser') document.getElementById('toolEraser').classList.add('active');
+            if(t==='fill') document.getElementById('toolFill').classList.add('active');
+            if(t==='shapes') document.getElementById('btnShapes').classList.add('active');
+        }
+
+        document.querySelectorAll('[data-shape]').forEach(el => {
+            el.onclick = () => {
+                activeShape = el.dataset.shape;
+                setTool('shapes');
+                document.getElementById('shapeDialog').style.display = 'none';
+            };
+        });
+
+        document.getElementById('colorPicker').oninput = (e) => {
+            color = e.target.value;
+            document.getElementById('colorShow').style.background = color;
+        };
+
+        document.getElementById('sizeSlider').oninput = (e) => size = e.target.value;
         
-        // البوابة (فحص التلامس وليس المركز فقط)
-        const hitPortal = getTileAt(this.x, this.y)===3 || getTileAt(this.x+this.w, this.y)===3 ||
-                          getTileAt(this.x, this.y+this.h)===3 || getTileAt(this.x+this.w, this.y+this.h)===3;
-        if(hitPortal) loadLevel(currentLevel+1);
-    }
+        document.getElementById('btnClear').onclick = () => {
+            if(confirm("مسح اللوحة؟")) init();
+        };
 
-    hurt(amount) {
-        if(this.invuln > 0) return;
-        this.hp -= amount; this.invuln = 40; this.vy = -6; screenShake = 5;
-        if(this.hp <= 0) gameOver();
-    }
+        // Zoom Logic
+        const updateZoom = () => {
+            document.getElementById('canvasWrapper').style.transform = `scale(${zoom})`;
+        };
 
-    draw() {
-        if(this.invuln > 0 && Math.floor(Date.now()/50)%2==0) return;
-        ctx.fillStyle = '#00bcd4'; 
-        let lo = Math.sin(this.animFrame)*3;
-        ctx.fillRect(this.x, this.y, this.w, this.h-4);
-        ctx.fillRect(this.x+1, this.y+12+lo, 3, 4); ctx.fillRect(this.x+6, this.y+12-lo, 3, 4);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(this.x+(this.facing==1?6:2), this.y+4, 2, 2);
-    }
-}
+        document.getElementById('btnZoomIn').onclick = () => {
+            zoom = Math.min(zoom + 0.2, 5.0);
+            updateZoom();
+        };
 
-class Enemy {
-    constructor(x,y){this.x=x;this.y=y;this.w=16;this.h=16;this.vx=1;this.hp=3;this.sX=x;}
-    update(){
-        this.x+=this.vx;
-        if(Math.abs(this.x-this.sX)>50 || isSolid(this.x+(this.vx>0?16:0), this.y+8)) this.vx*=-1;
-    }
-    draw(){
-        ctx.fillStyle='#ff4081'; ctx.fillRect(this.x,this.y,16,16);
-        ctx.fillStyle='#000'; ctx.fillRect(this.x+3,this.y+4,2,4); ctx.fillRect(this.x+11,this.y+4,2,4);
-    }
-}
-class Bullet{
-    constructor(x,y,d){this.x=x;this.y=y;this.vx=d*8;this.life=60;}
-    update(){this.x+=this.vx;this.life--;}
-    draw(){ctx.fillStyle='#ffff00';ctx.fillRect(this.x,this.y,6,2);}
-}
+        document.getElementById('btnZoomOut').onclick = () => {
+            zoom = Math.max(zoom - 0.2, 0.5);
+            updateZoom();
+        };
 
-function startGame() {
-    document.getElementById('startScreen').style.display = 'none';
-    currentLevel=0; loadLevel(currentLevel); GameState='PLAY'; loop();
-}
-function loadLevel(idx) {
-    if(idx >= LEVELS.length) { GameState='WIN'; document.getElementById('winScreen').style.display='flex'; return; }
-    currentLevel=idx; document.getElementById('level').innerText=idx+1;
-    enemies=[]; bullets=[]; particles=[]; map=[];
-    const layout = LEVELS[idx];
-    for(let y=0; y<layout.length; y++) {
-        let row=[];
-        for(let x=0; x<layout[y].length; x++) {
-            let c=layout[y][x];
-            if(c==='S'){player=new Player(x*TILE,y*TILE); row.push(0);}
-            else if(c==='9'){enemies.push(new Enemy(x*TILE,y*TILE)); row.push(0);}
-            else row.push(parseInt(c));
-        }
-        map.push(row);
-    }
-}
+        document.getElementById('btnSend').onclick = () => {
+            const dataUrl = canvas.toDataURL('image/png');
+            tg.sendData(`DOODLE_URL::${dataUrl}::DRAWING`);
+            tg.close();
+        };
 
-function isSolid(x, y) {
-    let tx=Math.floor(x/TILE), ty=Math.floor(y/TILE);
-    if(ty<0||ty>=map.length||tx<0||tx>=map[0].length) return false;
-    return map[ty][tx] === 1;
-}
+        tempCanvas.addEventListener('touchstart', (e) => {
+            if(tool === 'fill') {
+                const pos = getPos(e);
+                floodFill(pos.x, pos.y, color);
+                saveState();
+            } else start(e);
+        });
+        tempCanvas.addEventListener('touchmove', move);
+        tempCanvas.addEventListener('touchend', end);
 
-function getTileAt(x, y) {
-    let tx=Math.floor(x/TILE), ty=Math.floor(y/TILE);
-    if(ty<0||ty>=map.length||tx<0||tx>=map[0].length) return 0;
-    return map[ty][tx];
-}
-
-function gameOver(){ GameState='GAMEOVER'; document.getElementById('gameOverScreen').style.display='flex'; }
-
-function update() {
-    if(GameState!=='PLAY') return;
-    player.update();
-
-    if(Input.fire && (!player.lastShot || Date.now()-player.lastShot>200)) {
-        bullets.push(new Bullet(player.x+(player.facing>0?12:0), player.y+6, player.facing));
-        player.lastShot=Date.now(); screenShake=2;
-    }
-
-    for(let i=bullets.length-1; i>=0; i--) {
-        let b=bullets[i]; b.update();
-        if(isSolid(b.x, b.y) || b.life<=0){ bullets.splice(i,1); continue; }
-        for(let j=enemies.length-1; j>=0; j--){
-            let e=enemies[j];
-            if(b.x>e.x && b.x<e.x+16 && b.y>e.y && b.y<e.y+16){
-                e.hp--; bullets.splice(i,1);
-                if(e.hp<=0) enemies.splice(j,1); break;
-            }
-        }
-    }
-
-    enemies.forEach(e => {
-        e.update();
-        if(player.x<e.x+14 && player.x+player.w>e.x+2 && player.y<e.y+14 && player.y+player.h>e.y+2) player.hurt(15);
-    });
-
-    for(let i=particles.length-1; i>=0; i--) {
-        let p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life--;
-        if(p.life<=0) particles.splice(i,1);
-    }
-
-    let tx = player.x-GW/2, ty = player.y-GH/2;
-    cam.x+=(tx-cam.x)*0.1; cam.y+=(ty-cam.y)*0.1;
-    if(screenShake>0) screenShake*=0.9; if(screenShake<0.5) screenShake=0;
-}
-
-function draw() {
-    ctx.fillStyle='#1a1a20'; ctx.fillRect(0,0,GW,GH);
-    ctx.save();
-    let sx=(Math.random()-0.5)*screenShake, sy=(Math.random()-0.5)*screenShake;
-    ctx.translate(-Math.floor(cam.x)+sx, -Math.floor(cam.y)+sy);
-
-    for(let y=0; y<map.length; y++) {
-        for(let x=0; x<map[y].length; x++) {
-            let t=map[y][x]; if(t===0) continue;
-            let px=x*TILE, py=y*TILE;
-            if(px<cam.x-TILE || px>cam.x+GW) continue;
-            if(t===1) {
-                ctx.fillStyle='#444455'; ctx.fillRect(px,py,TILE,TILE);
-                ctx.fillStyle='#222233'; ctx.fillRect(px,py+TILE-2,TILE,2); ctx.fillRect(px+TILE-2,py,2,TILE);
-            } else if(t===2) {
-                ctx.fillStyle='#888'; ctx.beginPath(); ctx.moveTo(px,py+TILE); ctx.lineTo(px+8,py); ctx.lineTo(px+16,py+TILE); ctx.fill();
-            } else if(t===3) {
-                ctx.fillStyle='#00ff00'; ctx.fillRect(px,py,TILE,TILE);
-            }
-        }
-    }
-    player.draw(); enemies.forEach(e=>e.draw()); bullets.forEach(b=>b.draw());
-    particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = p.life/20; ctx.fillRect(p.x, p.y, 2, 2); });
-    ctx.globalAlpha = 1; ctx.restore();
-}
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
-loadLevel(0); draw();
-</script>
+        init();
+    </script>
 </body>
 </html>
