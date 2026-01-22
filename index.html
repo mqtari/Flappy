@@ -1,358 +1,234 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Flappy Bird Mobile Pro</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #70c5ce;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- مكتبة Socket.IO للاتصال بالسيرفر -->
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<title>Codenames</title>
+<style>
+    :root { --bg: #111; --red: #e74c3c; --blue: #3498db; --neutral: #dcdcdc; --black: #2c3e50; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Tahoma', sans-serif; }
+    body { margin: 0; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
+    /* Dashboard */
+    .dashboard { height: 25%; display: flex; padding: 5px; gap: 5px; background: #222; }
+    .team-col { flex: 1; border-radius: 8px; padding: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; opacity: 0.5; border: 2px solid transparent; }
+    .team-red { background: linear-gradient(45deg, #5c241e, #922b21); }
+    .team-blue { background: linear-gradient(45deg, #1a3c52, #21618c); }
+    .active { opacity: 1; transform: scale(1.02); border-color: #fff; }
+    .score { font-size: 1.8rem; font-weight: bold; }
+    .role-btn { font-size: 0.6rem; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 10px; margin-top: 2px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); width: 100%; text-align: center; }
+    .role-btn.taken { background: #7ed321; color: black; border-color: #7ed321; }
 
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: 'Fredoka One', cursive;
-        }
+    /* Logs */
+    .logs { height: 12%; background: #1a1a1a; overflow-y: auto; font-size: 0.7rem; padding: 5px; border-top: 1px solid #333; border-bottom: 1px solid #333; }
+    .log-item { margin-bottom: 2px; }
 
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            margin: 0 auto;
-            background-color: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    /* Grid */
+    .grid { flex: 1; padding: 5px; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; }
+    .card { 
+        background: var(--neutral); color: #333; border-radius: 4px; 
+        display: flex; justify-content: center; align-items: center; 
+        text-align: center; font-weight: bold; font-size: 0.65rem; 
+        cursor: pointer; position: relative; transition: 0.3s;
+        box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+    }
+    
+    .card.revealed { color: white !important; cursor: default; transform: rotateY(180deg); }
+    .card.revealed.red { background: var(--red); }
+    .card.revealed.blue { background: var(--blue); }
+    .card.revealed.black { background: var(--black); border: 2px solid white; }
+    .card.revealed.neutral { background: #95a5a6; color: #eee !important; opacity: 0.4; }
 
-        canvas {
-            display: block;
-            image-rendering: pixelated;
-            max-width: 100%;
-            max-height: 100%;
-        }
+    /* Spymaster View */
+    .spy-view .card:not(.revealed).red { border: 3px solid var(--red); background: #333; color: var(--red); }
+    .spy-view .card:not(.revealed).blue { border: 3px solid var(--blue); background: #333; color: var(--blue); }
+    .spy-view .card:not(.revealed).black { border: 3px solid #777; background: #000; color: #aaa; }
+    .spy-view .card:not(.revealed).neutral { border: 1px dashed #555; background: #222; color: #777; }
 
-        .ui-overlay {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            pointer-events: none;
-            padding: 20px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 30px;
-            padding: 40px 20px;
-            text-align: center;
-            color: white;
-            width: 90%;
-            max-width: 350px;
-            pointer-events: all;
-            transform: scale(0.8);
-            opacity: 0;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
-
-        .card.active {
-            transform: scale(1);
-            opacity: 1;
-        }
-
-        h1 {
-            font-size: clamp(30px, 8vw, 45px);
-            margin: 0 0 10px;
-            background: linear-gradient(to bottom, #fff, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .score-display {
-            font-size: 70px;
-            line-height: 1;
-            margin: 20px 0;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        button {
-            background: #fff;
-            color: #333;
-            border: none;
-            padding: 15px 45px;
-            font-size: 20px;
-            font-family: 'Fredoka One';
-            border-radius: 50px;
-            cursor: pointer;
-            width: 100%;
-            max-width: 200px;
-            box-shadow: 0 6px 0 #ddd;
-            transition: 0.1s;
-        }
-
-        button:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #ddd;
-        }
-
-        #live-score-container {
-            position: absolute;
-            top: 10%;
-            width: 100%;
-            text-align: center;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        #live-score {
-            font-size: 60px;
-            color: white;
-            text-shadow: 4px 4px 0 rgba(0,0,0,0.2);
-            opacity: 0;
-        }
-    </style>
+    /* Controls */
+    .controls { height: 12%; background: #252525; padding: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    input, select { padding: 10px; border-radius: 20px; border: none; text-align: center; outline: none; }
+    input { flex: 1; background: #fff; color: #000; }
+    button { padding: 10px 20px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; color: white; }
+    .btn-go { background: #2ecc71; }
+    .btn-pass { background: #e74c3c; width: 100%; }
+    .hidden { display: none !important; }
+</style>
 </head>
 <body>
 
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    
-    <div class="ui-overlay">
-        <!-- النتيجة الحية -->
-        <div id="live-score-container">
-            <div id="live-score">0</div>
-        </div>
-
-        <!-- شاشة البداية -->
-        <div id="start-screen" class="card active">
-            <h1>FLAPPY BIRD</h1>
-            <p>اضغط للبدء</p>
-            <button onclick="startGame()">إبدأ</button>
-        </div>
-
-        <!-- شاشة النهاية -->
-        <div id="over-screen" class="card">
-            <h1>انتهت اللعبة</h1>
-            <div class="score-display" id="final-score">0</div>
-            <p>أفضل نتيجة: <span id="best-score">0</span></p>
-            <button onclick="resetGame()">إعادة</button>
-        </div>
+<div class="dashboard">
+    <div id="team-red" class="team-col team-red">
+        <div class="score" id="score-red">0</div>
+        <div class="role-btn" id="btn-red_spy" onclick="joinRole('red_spy')">قائد أحمر</div>
+        <div class="role-btn" id="btn-red_op" onclick="joinRole('red_op')">عميل أحمر</div>
+    </div>
+    <div id="team-blue" class="team-col team-blue">
+        <div class="score" id="score-blue">0</div>
+        <div class="role-btn" id="btn-blue_spy" onclick="joinRole('blue_spy')">قائد أزرق</div>
+        <div class="role-btn" id="btn-blue_op" onclick="joinRole('blue_op')">عميل أزرق</div>
     </div>
 </div>
 
+<div class="logs" id="logs"></div>
+<div class="grid" id="grid"></div>
+
+<div class="controls">
+    <div id="start-btn" class="hidden"><button class="btn-go" onclick="sendAction('start')">اضغط لبدء اللعبة</button></div>
+    <div id="spy-controls" class="hidden" style="display:flex; width:100%; gap:5px;">
+        <input type="text" id="clueTxt" placeholder="تلميح">
+        <select id="clueNum"><option>1</option><option>2</option><option>3</option><option>∞</option></select>
+        <button class="btn-go" onclick="sendClue()">إرسال</button>
+    </div>
+    <div id="op-controls" class="hidden" style="width:100%">
+        <button class="btn-pass" onclick="sendAction('pass')">إنهاء الدور</button>
+    </div>
+    <div id="wait-msg" style="color:#777; font-size:0.8rem;">...</div>
+</div>
+
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.ready();
+    // قراءة رابط السيرفر من رابط الصفحة الذي أرسله البوت
+    const urlParams = new URLSearchParams(window.location.search);
+    const ROOM_ID = urlParams.get('r');
+    const SERVER_URL = urlParams.get('host'); // البوت يرسل هذا الرابط تلقائياً
 
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // إعدادات اللعبة المتكيفة
-    let width, height, scale;
-    let gameState = 'START';
-    let score = 0;
-    let bestScore = localStorage.getItem('bestScore') || 0;
-    let frames = 0;
-    let pipes = [];
+    let socket;
+    let tgUser = {id: Math.floor(Math.random()*100000), first_name: 'Guest'};
+    let gameState = null;
+    let myRole = null;
 
-    // ضبط الحجم الديناميكي
-    function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        // نستخدم جهاز البكسل ريشيو لضمان الحدة على الموبايل
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        ctx.scale(dpr, dpr);
+    // تهيئة تليجرام
+    if (window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        if(window.Telegram.WebApp.initDataUnsafe.user) 
+            tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+    }
+
+    if (SERVER_URL && ROOM_ID) {
+        // الاتصال بالسيرفر
+        socket = io(SERVER_URL);
         
-        // حساب المقياس بناءً على الطول لضمان ثبات الفيزياء
-        scale = height / 600; 
+        socket.on('connect', () => {
+            socket.emit('join_game', { room: ROOM_ID, uid: tgUser.id });
+        });
+
+        socket.on('update', (data) => {
+            gameState = data;
+            render();
+        });
+    } else {
+        document.body.innerHTML = "<h3 style='text-align:center;color:white;margin-top:50px'>الرجاء فتح اللعبة من البوت</h3>";
     }
-    window.addEventListener('resize', resize);
-    resize();
 
-    const bird = {
-        x: 60,
-        y: 0,
-        w: 38,
-        h: 28,
-        velocity: 0,
-        get gravity() { return 0.25 * scale; },
-        get jump() { return -5.5 * scale; },
-        rotation: 0,
+    // --- Logic ---
+    function joinRole(role) {
+        socket.emit('action', { 
+            room: ROOM_ID, type: 'join_role', 
+            role: role, uid: tgUser.id, name: tgUser.first_name 
+        });
+    }
 
-        draw() {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            ctx.rotate(this.rotation);
+    function sendAction(type, extra={}) {
+        socket.emit('action', { room: ROOM_ID, type: type, ...extra });
+    }
+
+    function sendClue() {
+        const txt = document.getElementById('clueTxt').value;
+        const num = document.getElementById('clueNum').value;
+        if(!txt) return;
+        sendAction('clue', { text: txt, num: num });
+        document.getElementById('clueTxt').value = '';
+    }
+
+    function clickCard(i) {
+        // تحقق سريع
+        if(!myRole || !myRole.includes('op')) return;
+        const myTeam = myRole.split('_')[0];
+        if(gameState.turn !== myTeam || gameState.phase !== 'op') return;
+        
+        sendAction('click', { idx: i });
+    }
+
+    function render() {
+        // 1. Scores & Active Team
+        document.getElementById('score-red').innerText = gameState.scores.red;
+        document.getElementById('score-blue').innerText = gameState.scores.blue;
+        document.getElementById('team-red').className = `team-col team-red ${gameState.turn==='red'?'active':''}`;
+        document.getElementById('team-blue').className = `team-col team-blue ${gameState.turn==='blue'?'active':''}`;
+
+        // 2. Roles
+        myRole = null;
+        for (const [role, player] of Object.entries(gameState.players)) {
+            const btn = document.getElementById(`btn-${role}`);
+            if (player) {
+                btn.innerText = player.name;
+                btn.classList.add('taken');
+                if(player.id === tgUser.id) myRole = role;
+            } else {
+                btn.innerText = role.includes('spy') ? 'قائد' : 'عميل';
+                btn.classList.remove('taken');
+            }
+        }
+
+        // 3. Spymaster View
+        if (myRole && myRole.includes('spy')) document.body.classList.add('spy-view');
+        else document.body.classList.remove('spy-view');
+
+        // 4. Grid
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        gameState.cards.forEach((c, i) => {
+            const div = document.createElement('div');
+            div.className = `card ${c.type} ${c.revealed ? 'revealed' : ''}`;
+            div.innerText = c.word;
+            if(c.revealed && c.type==='black') div.innerText = "☠️";
+            div.onclick = () => clickCard(i);
+            grid.appendChild(div);
+        });
+
+        // 5. Controls
+        const spyControls = document.getElementById('spy-controls');
+        const opControls = document.getElementById('op-controls');
+        const startBtn = document.getElementById('start-btn');
+        const waitMsg = document.getElementById('wait-msg');
+        
+        spyControls.classList.add('hidden');
+        opControls.classList.add('hidden');
+        startBtn.classList.add('hidden');
+        waitMsg.classList.remove('hidden');
+        waitMsg.innerText = "انتظر دورك...";
+
+        if (!gameState.started) {
+            waitMsg.innerText = "بانتظار اكتمال اللاعبين...";
+            // زر البدء يظهر لأي شخص إذا لم تبدأ
+            startBtn.classList.remove('hidden');
+        } else if (myRole) {
+            const myTeam = myRole.split('_')[0];
+            const roleType = myRole.split('_')[1];
             
-            // رسم جسم العصفور الاحترافي
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath();
-            ctx.ellipse(0, 0, this.w/2, this.h/2, 0, 0, Math.PI*2);
-            ctx.fill();
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // العين
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(10, -5, 5, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.arc(12, -5, 2, 0, Math.PI*2); ctx.fill();
-
-            // المنقار
-            ctx.fillStyle = '#e67e22';
-            ctx.beginPath();
-            ctx.moveTo(15, 0); ctx.lineTo(25, 4); ctx.lineTo(15, 8);
-            ctx.fill();
-
-            ctx.restore();
-        },
-
-        update() {
-            if (gameState === 'START') {
-                this.y = height / 2 + Math.sin(frames / 15) * 15;
-                return;
-            }
-            this.velocity += this.gravity;
-            this.y += this.velocity;
-            this.rotation = Math.min(Math.PI/4, Math.max(-Math.PI/4, this.velocity * 0.1));
-
-            if (this.y + this.h/2 >= height - 60) endGame();
-        }
-    };
-
-    class Pipe {
-        constructor() {
-            this.w = 65;
-            this.gap = 150 * scale; // الفجوة تتناسب مع طول الشاشة
-            this.x = width + 50;
-            this.y = Math.random() * (height - 300) + 100;
-            this.passed = false;
-        }
-        draw() {
-            ctx.fillStyle = '#2ecc71';
-            ctx.strokeStyle = '#27ae60';
-            ctx.lineWidth = 3;
-
-            // أنبوب علوي
-            ctx.fillRect(this.x, 0, this.w, this.y);
-            ctx.strokeRect(this.x, -5, this.w, this.y + 5);
-
-            // أنبوب سفلي
-            ctx.fillRect(this.x, this.y + this.gap, this.w, height);
-            ctx.strokeRect(this.x, this.y + this.gap, this.w, height + 5);
-        }
-        update() {
-            this.x -= 3 * scale;
-            if (!this.passed && this.x + this.w < bird.x) {
-                score++;
-                this.passed = true;
-                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            }
-        }
-    }
-
-    function startGame() {
-        gameState = 'PLAYING';
-        bird.y = height / 2;
-        document.getElementById('start-screen').classList.remove('active');
-        document.getElementById('live-score').style.opacity = '1';
-    }
-
-    function endGame() {
-        if (gameState === 'OVER') return;
-        gameState = 'OVER';
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('bestScore', bestScore);
-        }
-        document.getElementById('final-score').innerText = score;
-        document.getElementById('best-score').innerText = bestScore;
-        document.getElementById('over-screen').classList.add('active');
-        document.getElementById('live-score').style.opacity = '0';
-        if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-    }
-
-    function resetGame() {
-        pipes = [];
-        score = 0;
-        bird.velocity = 0;
-        bird.y = height / 2;
-        gameState = 'PLAYING';
-        document.getElementById('over-screen').classList.remove('active');
-        document.getElementById('live-score').innerText = '0';
-        document.getElementById('live-score').style.opacity = '1';
-    }
-
-    // التحكم باللمس الشامل
-    const handleAction = (e) => {
-        if (e.target.tagName === 'BUTTON') return;
-        if (gameState === 'PLAYING') bird.velocity = bird.jump;
-        if (gameState === 'START') startGame();
-        e.preventDefault();
-    };
-
-    window.addEventListener('touchstart', handleAction, { passive: false });
-    window.addEventListener('mousedown', (e) => {
-        if (e.button === 0) handleAction(e);
-    });
-
-    function loop() {
-        ctx.clearRect(0, 0, width, height);
-
-        // رسم الخلفية
-        ctx.fillStyle = '#70c5ce';
-        ctx.fillRect(0, 0, width, height);
-
-        if (gameState === 'PLAYING') {
-            if (frames % Math.floor(90 / scale) === 0) pipes.push(new Pipe());
-            pipes.forEach((p, i) => {
-                p.update();
-                p.draw();
-                // تصادم
-                if (bird.x + 12 > p.x && bird.x - 12 < p.x + p.w) {
-                    if (bird.y - 10 < p.y || bird.y + 10 > p.y + p.gap) endGame();
+            if (gameState.turn === myTeam) {
+                if (gameState.phase === 'spy' && roleType === 'spy') {
+                    spyControls.classList.remove('hidden');
+                    waitMsg.classList.add('hidden');
+                } else if (gameState.phase === 'op' && roleType === 'op') {
+                    opControls.classList.remove('hidden');
+                    waitMsg.classList.add('hidden');
                 }
-            });
-            if (pipes.length > 0 && pipes[0].x < -100) pipes.shift();
-            document.getElementById('live-score').innerText = score;
+            }
         }
 
-        bird.update();
-        bird.draw();
-
-        // رسم الأرضية
-        ctx.fillStyle = '#e1d995';
-        ctx.fillRect(0, height - 60, width, 60);
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(0, height - 70, width, 10);
-
-        frames++;
-        requestAnimationFrame(loop);
+        // 6. Logs
+        const logs = document.getElementById('logs');
+        logs.innerHTML = gameState.logs.map(l => {
+            const color = l.team==='red'?'#e74c3c':'#3498db';
+            if(l.type === 'clue') return `<div style="color:${color}">💡 ${l.text} (${l.num})</div>`;
+            return `<div>🎯 كشف: ${l.word}</div>`;
+        }).join('');
     }
-
-    loop();
 </script>
 </body>
 </html>
