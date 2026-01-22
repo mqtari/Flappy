@@ -159,6 +159,54 @@
             width: 100px;
             border-radius: 15px;
         }
+
+        /* ستايل نافذة الحفظ الجديدة */
+        .save-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 99999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .save-modal img {
+            max-width: 90%;
+            max-height: 70vh;
+            border: 2px solid var(--tg-theme-button-color);
+            box-shadow: var(--neon-glow);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            /* السماح بالضغط المطول */
+            pointer-events: auto !important;
+            user-select: auto !important; 
+            -webkit-user-select: auto !important;
+            -webkit-touch-callout: default !important;
+        }
+
+        .save-hint {
+            color: #fff;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #000;
+        }
+
+        .close-btn {
+            padding: 10px 30px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -205,6 +253,13 @@
         <div class="circle-switch" data-shape="circle">⚪</div>
         <div class="circle-switch" data-shape="triangle">🔺</div>
         <div class="circle-switch" data-shape="line">➖</div>
+    </div>
+
+    <!-- نافذة الحفظ الجديدة -->
+    <div id="saveModal" class="save-modal">
+        <div class="save-hint">👇 اضغط مطولاً على الصورة لحفظها 👇</div>
+        <img id="finalImage" src="" alt="رسمتي">
+        <button class="close-btn" onclick="document.getElementById('saveModal').style.display='none'">إغلاق</button>
     </div>
 
     <script>
@@ -407,41 +462,16 @@
         };
 
         // -------------------------------------------------------------------
-        // وظيفة تحويل الصورة لملف ثم المشاركة (الحل النهائي للحفظ)
+        //  الحل النهائي: عرض الصورة والطلب من المستخدم الضغط المطول
         // -------------------------------------------------------------------
-        function dataURLtoFile(dataurl, filename) {
-            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-            while(n--){
-                u8arr[n] = bstr.charCodeAt(n);
-            }
-            return new File([u8arr], filename, {type:mime});
-        }
-
-        document.getElementById('btnSend').onclick = async () => {
+        document.getElementById('btnSend').onclick = () => {
+            // تحويل الكانفاس لصورة
             const dataUrl = canvas.toDataURL('image/png');
-            const file = dataURLtoFile(dataUrl, 'my-neon-drawing.png');
-
-            if (navigator.share && navigator.canShare({ files: [file] })) {
-                // الطريقة الحديثة: مشاركة الملف مباشرة (تظهر خيارات الحفظ في الهاتف)
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'رسمتي',
-                        text: 'رسمة جديدة من Draw Pro Neon'
-                    });
-                } catch (error) {
-                    console.log('Sharing failed', error);
-                }
-            } else {
-                // طريقة احتياطية للكمبيوتر
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = 'my-neon-drawing.png';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // وضع الصورة في نافذة الحفظ
+            const imgElement = document.getElementById('finalImage');
+            imgElement.src = dataUrl;
+            // إظهار النافذة
+            document.getElementById('saveModal').style.display = 'flex';
         };
 
         tempCanvas.addEventListener('touchstart', (e) => {
