@@ -7,42 +7,39 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --tg-theme-button-color: #00f2ff;
-            --tg-theme-button-text-color: #ffffff;
-            --bg-dark: #0f172a;
-            --neon-glow: 0 0 15px rgba(0, 242, 255, 0.6);
-            --glass: rgba(30, 41, 59, 0.8);
+            --tg-clr: #00f2ff;
+            --bg: #0f172a;
+            --glass: rgba(30, 41, 59, 0.95);
+            --neon: 0 0 15px rgba(0, 242, 255, 0.6);
         }
 
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none;
             user-select: none;
         }
 
         body {
             margin: 0;
             padding: 0;
-            background-color: var(--bg-dark);
+            background-color: var(--bg);
             color: white;
             font-family: system-ui, -apple-system, sans-serif;
             height: 100vh;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        /* حاوية الزوم واللوحة */
-        .board-container {
+        /* حاوية اللوحة */
+        .board {
             flex: 1;
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            padding: 10px;
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
-            overflow: auto; /* للسماح بالتمرير عند الزوم الكبير */
+            touch-action: none;
         }
 
         .canvas-container {
@@ -51,10 +48,9 @@
             height: 90vw;
             max-width: 450px;
             max-height: 450px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5), var(--neon-glow);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5), var(--neon);
             border-radius: 12px;
             background: #fff;
-            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             transform-origin: center;
         }
 
@@ -63,110 +59,103 @@
             top: 0; left: 0;
             width: 100% !important;
             height: 100% !important;
+            border-radius: 12px;
             touch-action: none;
         }
 
-        /* أدوات التحكم */
+        #tempCanvas { z-index: 5; }
+
+        /* الأزرار السفلية */
         .controls {
             background: var(--glass);
             backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(0, 242, 255, 0.2);
-            padding: 10px;
+            border-top: 2px solid rgba(0, 242, 255, 0.3);
+            padding: 15px 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            z-index: 2000;
+            gap: 12px;
+            z-index: 9999; /* لضمان ظهورها فوق كل شيء */
         }
 
-        .controls-row {
+        .row {
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 10px;
         }
 
-        /* ستايل شريط الزوم (Progress) */
-        .zoom-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.05);
-            padding: 5px 15px;
-            border-radius: 20px;
-            width: 90%;
-            margin: 0 auto;
-        }
-        
-        #zoomSlider {
-            flex: 1;
-            -webkit-appearance: none;
-            height: 6px;
-            background: #334155;
-            border-radius: 5px;
-            outline: none;
-        }
-        
-        #zoomSlider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: var(--tg-theme-button-color);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: var(--neon-glow);
-        }
-
-        .circle-switch {
-            width: 42px;
-            height: 42px;
+        .btn {
+            width: 46px;
+            height: 46px;
             border-radius: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(0, 242, 255, 0.3);
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(0, 242, 255, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--tg-theme-button-color);
+            font-size: 22px;
             cursor: pointer;
-            transition: all 0.2s;
+            color: white;
+            transition: 0.2s;
         }
 
-        .circle-switch.active {
-            background: var(--tg-theme-button-color);
-            color: #000;
-            box-shadow: var(--neon-glow);
-        }
+        .btn:active { transform: scale(0.9); }
+        .btn.active { background: var(--tg-clr); color: #000; box-shadow: var(--neon); }
 
-        /* لوحة الحجم */
+        /* شريط الحجم الجانبي */
         .thickness-panel {
             position: absolute;
-            left: 10px;
-            top: 50%;
+            right: 10px;
+            top: 40%;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
             align-items: center;
             background: var(--glass);
-            padding: 10px 5px;
-            border-radius: 15px;
+            padding: 15px 8px;
+            border-radius: 20px;
+            z-index: 9999;
             border: 1px solid rgba(0,242,255,0.3);
-            z-index: 1000;
         }
 
         #sizeSlider {
             writing-mode: bt-lr;
             -webkit-appearance: slider-vertical;
-            width: 8px;
-            height: 120px;
+            width: 12px;
+            height: 130px;
+        }
+
+        /* زووم */
+        .zoom-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 15px;
+            border-radius: 30px;
+            width: 90%;
+            margin: 0 auto;
+        }
+        #zoomSlider { flex: 1; accent-color: var(--tg-clr); }
+
+        /* زر الحفظ الخاص */
+        #btnSave {
+            background: linear-gradient(135deg, #00f2ff, #0066ff);
+            width: auto;
+            padding: 0 25px;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            color: white;
         }
 
         .shape-dialog {
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            border: 2px solid var(--tg-theme-button-color);
-            border-radius: 20px;
+            background: #1e293b;
+            border: 2px solid var(--tg-clr);
+            border-radius: 25px;
             padding: 20px;
             display: none;
             grid-template-columns: repeat(2, 1fr);
@@ -174,294 +163,224 @@
             z-index: 10000;
         }
 
-        #btnSend {
-            background: linear-gradient(135deg, #00f2ff, #0066ff);
-            color: white;
-            font-weight: bold;
-            flex: 1;
-            max-width: 120px;
-        }
-
-        .label-text { font-size: 10px; color: var(--tg-theme-button-color); margin-bottom: 5px; }
+        input[type="color"] { position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .color-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: #000; }
 
     </style>
 </head>
 <body>
 
-    <div class="board-container">
-        <!-- لوحة التحكم في حجم الخط (1-50) -->
+    <div class="board">
         <div class="thickness-panel">
-            <span class="label-text">حجم</span>
-            <span id="sizeValue" style="font-size: 12px; font-weight: bold;">10</span>
-            <input type="range" id="sizeSlider" min="1" max="50" value="10">
+            <span style="font-size: 10px; color: var(--tg-clr); margin-bottom: 5px;">حجم</span>
+            <input type="range" id="sizeSlider" min="1" max="70" value="10">
+            <span id="sizeVal" style="margin-top:5px; font-weight:bold;">10</span>
         </div>
 
-        <div class="canvas-container" id="canvasWrapper">
+        <div class="canvas-container" id="wrapper">
             <canvas id="mainCanvas" width="1000" height="1000"></canvas>
             <canvas id="tempCanvas" width="1000" height="1000"></canvas>
         </div>
     </div>
 
     <div class="controls">
-        <!-- شريط الزوم (نفس فكرة البروجرس) -->
-        <div class="zoom-control">
-            <span style="font-size: 12px;">🔍</span>
+        <div class="zoom-bar">
+            <span>🔍</span>
             <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1">
-            <div class="circle-switch" id="btnResetZoom" style="width: 30px; height: 30px; font-size: 10px;">Reset</div>
+            <div id="btnReset" style="font-size: 11px; color: #ff4444; cursor: pointer;">ضبط 🔄</div>
         </div>
 
-        <div class="controls-row">
-            <div class="circle-switch active" id="toolPencil">✏️</div>
-            <div class="circle-switch" id="toolEraser">🧽</div>
-            <div class="circle-switch" id="toolFill">🫗</div>
-            <div class="circle-switch" id="toolColor">
-                <input type="color" id="colorPicker" value="#000000" style="position:absolute; opacity:0; width:40px; height:40px; cursor:pointer">
-                <div id="colorShow" style="width:20px; height:20px; border-radius:50%; background:#000; border:2px solid #fff"></div>
+        <div class="row">
+            <div class="btn active" id="toolPencil">✏️</div>
+            <div class="btn" id="toolEraser">🧽</div>
+            <div class="btn" id="toolPicker">💧</div>
+            <div class="btn" id="toolFill">🫗</div>
+            <div class="btn">
+                <input type="color" id="colorPicker">
+                <div class="color-circle" id="colorShow"></div>
             </div>
-            <div class="circle-switch" id="btnShapes">📐</div>
+            <div class="btn" id="btnShapeMenu">📐</div>
         </div>
 
-        <div class="controls-row">
-            <div class="circle-switch" id="btnUndo">↩️</div>
-            <div class="circle-switch" id="btnRedo">↪️</div>
-            <div class="circle-switch" id="btnClear" style="color: #ff4444">🗑️</div>
-            <div class="circle-switch" id="btnSend">إرسال</div>
+        <div class="row">
+            <div class="btn" id="btnUndo">↩️</div>
+            <div class="btn" id="btnRedo">↪️</div>
+            <div class="btn" id="btnClear">🗑️</div>
+            <div class="btn" id="btnSave">حفظ الجهاز 💾</div>
         </div>
     </div>
 
     <div id="shapeDialog" class="shape-dialog">
-        <div class="circle-switch" data-shape="square">⬜</div>
-        <div class="circle-switch" data-shape="circle">⚪</div>
-        <div class="circle-switch" data-shape="triangle">🔺</div>
-        <div class="circle-switch" data-shape="line">➖</div>
+        <div class="btn" data-shape="square">⬜</div>
+        <div class="btn" data-shape="circle">⚪</div>
+        <div class="btn" data-shape="triangle">🔺</div>
+        <div class="btn" data-shape="line">➖</div>
     </div>
 
     <script>
-        const CONFIG = {
-            BOT_TOKEN: 'ضع_توكن_البوت',
-            IMGBB_KEY: 'ضع_مفتاح_IMGBB'
-        };
-
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const tempCanvas = document.getElementById('tempCanvas');
-        const tctx = tempCanvas.getContext('2d');
-        const wrapper = document.getElementById('canvasWrapper');
+        const canvas = document.getElementById('mainCanvas'), ctx = canvas.getContext('2d', {willReadFrequently:true});
+        const tCanvas = document.getElementById('tempCanvas'), tctx = tCanvas.getContext('2d');
+        const wrapper = document.getElementById('wrapper');
         
-        let drawing = false;
-        let tool = 'pencil';
-        let color = '#000000';
-        let size = 10;
-        let zoom = 1;
-        let undoStack = [];
-        let redoStack = [];
-        let startPos = { x: 0, y: 0 };
-        let activeShape = 'square';
+        let drawing = false, tool = 'pencil', color = '#000000', size = 10, zoom = 1, shape = 'square';
+        let undoStack = [], redoStack = [], startPos = {x:0, y:0};
 
         function init() {
             ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 1000, 1000);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             saveState();
         }
 
-        // تحسين دقة اللمس مع الزوم
         function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches ? e.touches[0] : e;
-            // نحسب الإحداثيات بالنسبة لحجم الكانفاس الحقيقي (1000x1000)
+            const rect = tCanvas.getBoundingClientRect();
             return {
-                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
-                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+                x: (e.clientX - rect.left) * (1000 / rect.width),
+                y: (e.clientY - rect.top) * (1000 / rect.height)
             };
         }
 
         function saveState() {
             undoStack.push(canvas.toDataURL());
-            if (undoStack.length > 30) undoStack.shift();
+            if(undoStack.length > 30) undoStack.shift();
             redoStack = [];
         }
 
-        // الأحداث
-        canvas.addEventListener('touchstart', (e) => {
-            drawing = true;
-            startPos = getPos(e);
-            if (tool === 'fill') {
-                floodFill(startPos.x, startPos.y, color);
-                saveState();
-                drawing = false;
-            } else if (tool !== 'shapes') {
-                ctx.beginPath();
-                ctx.moveTo(startPos.x, startPos.y);
+        // --- أحداث الرسم ---
+        tCanvas.addEventListener('pointerdown', (e) => {
+            const pos = getPos(e);
+            startPos = pos;
+            if(tool === 'toolPicker') {
+                const p = ctx.getImageData(pos.x, pos.y, 1, 1).data;
+                const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1).toUpperCase();
+                updateColor(hex); setTool('pencil'); return;
             }
+            if(tool === 'fill') { floodFill(Math.floor(pos.x), Math.floor(pos.y), color); saveState(); return; }
+            drawing = true;
+            if(tool !== 'shape') { ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
         });
 
-        canvas.addEventListener('touchmove', (e) => {
-            if (!drawing) return;
+        window.addEventListener('pointermove', (e) => {
+            if(!drawing) return;
             const pos = getPos(e);
-            
-            if (tool === 'pencil' || tool === 'eraser') {
+            if(tool === 'pencil' || tool === 'eraser') {
                 ctx.strokeStyle = tool === 'eraser' ? 'white' : color;
                 ctx.lineWidth = size;
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
-            } else if (tool === 'shapes') {
-                tctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.lineTo(pos.x, pos.y); ctx.stroke();
+            } else if(tool === 'shape') {
+                tctx.clearRect(0,0,1000,1000);
                 drawShape(tctx, startPos, pos);
             }
         });
 
-        canvas.addEventListener('touchend', (e) => {
-            if (!drawing) return;
-            drawing = false;
-            if (tool === 'shapes') {
-                const pos = getPos(e.changedTouches[0]);
-                drawShape(ctx, startPos, pos);
-                tctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
+        window.addEventListener('pointerup', (e) => {
+            if(!drawing) return; drawing = false;
+            if(tool === 'shape') { drawShape(ctx, startPos, getPos(e)); tctx.clearRect(0,0,1000,1000); }
             saveState();
         });
 
         function drawShape(c, s, e) {
-            c.strokeStyle = color;
-            c.lineWidth = size;
-            c.beginPath();
-            const w = e.x - s.x;
-            const h = e.y - s.y;
-            if (activeShape === 'square') c.rect(s.x, s.y, w, h);
-            else if (activeShape === 'circle') c.arc(s.x, s.y, Math.sqrt(w*w + h*h), 0, Math.PI*2);
-            else if (activeShape === 'line') { c.moveTo(s.x, s.y); c.lineTo(e.x, e.y); }
-            else if (activeShape === 'triangle') {
-                c.moveTo(s.x + w/2, s.y);
-                c.lineTo(s.x, s.y + h);
-                c.lineTo(s.x + w, s.y + h);
-                c.closePath();
-            }
+            c.strokeStyle = color; c.lineWidth = size; c.beginPath();
+            const w = e.x - s.x, h = e.y - s.y;
+            if(shape==='square') c.rect(s.x, s.y, w, h);
+            else if(shape==='circle') c.arc(s.x, s.y, Math.sqrt(w*w + h*h), 0, Math.PI*2);
+            else if(shape==='line') { c.moveTo(s.x, s.y); c.lineTo(e.x, e.y); }
+            else if(shape==='triangle') { c.moveTo(s.x+w/2, s.y); c.lineTo(s.x, s.y+h); c.lineTo(s.x+w, s.y+h); c.closePath(); }
             c.stroke();
         }
 
-        // التحكم في الحجم (1-50)
-        document.getElementById('sizeSlider').oninput = (e) => {
-            size = e.target.value;
-            document.getElementById('sizeValue').innerText = size;
-        };
-
-        // التحكم في الزوم (Slider)
-        const zoomSlider = document.getElementById('zoomSlider');
-        zoomSlider.oninput = (e) => {
-            zoom = e.target.value;
-            wrapper.style.transform = `scale(${zoom})`;
-        };
-
-        // زر إعادة ضبط الزوم
-        document.getElementById('btnResetZoom').onclick = () => {
-            zoom = 1;
-            zoomSlider.value = 1;
-            wrapper.style.transform = `scale(1)`;
-        };
-
-        // اختيار الألوان
-        document.getElementById('colorPicker').oninput = (e) => {
-            color = e.target.value;
-            document.getElementById('colorShow').style.background = color;
-        };
-
-        // الأزرار الأخرى
-        document.getElementById('toolPencil').onclick = () => setTool('pencil');
-        document.getElementById('toolEraser').onclick = () => setTool('eraser');
-        document.getElementById('toolFill').onclick = () => setTool('fill');
-        document.getElementById('btnUndo').onclick = () => {
-            if (undoStack.length > 1) {
-                redoStack.push(undoStack.pop());
-                let img = new Image();
-                img.src = undoStack[undoStack.length - 1];
-                img.onload = () => { ctx.clearRect(0,0,1000,1000); ctx.drawImage(img,0,0); };
-            }
-        };
-        document.getElementById('btnClear').onclick = () => { if(confirm("مسح اللوحة؟")) init(); };
-
+        // --- ربط الأزرار برمجياً لضمان العمل ---
         function setTool(t) {
             tool = t;
-            document.querySelectorAll('.circle-switch').forEach(el => el.classList.remove('active'));
-            if(t==='pencil') document.getElementById('toolPencil').classList.add('active');
-            if(t==='eraser') document.getElementById('toolEraser').classList.add('active');
-            if(t==='fill') document.getElementById('toolFill').classList.add('active');
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            const idMap = {pencil:'toolPencil', eraser:'toolEraser', toolPicker:'toolPicker', fill:'toolFill', shape:'btnShapeMenu'};
+            const activeBtn = document.getElementById(idMap[t] || t);
+            if(activeBtn) activeBtn.classList.add('active');
         }
 
-        document.getElementById('btnShapes').onclick = () => {
+        document.getElementById('toolPencil').onclick = () => setTool('pencil');
+        document.getElementById('toolEraser').onclick = () => setTool('eraser');
+        document.getElementById('toolPicker').onclick = () => setTool('toolPicker');
+        document.getElementById('toolFill').onclick = () => setTool('fill');
+        
+        document.getElementById('btnShapeMenu').onclick = () => {
             const d = document.getElementById('shapeDialog');
             d.style.display = d.style.display === 'grid' ? 'none' : 'grid';
         };
 
-        document.querySelectorAll('[data-shape]').forEach(el => {
-            el.onclick = () => {
-                activeShape = el.dataset.shape;
-                setTool('shapes');
-                document.getElementById('btnShapes').classList.add('active');
+        document.querySelectorAll('[data-shape]').forEach(b => {
+            b.onclick = () => {
+                shape = b.dataset.shape; setTool('shape');
                 document.getElementById('shapeDialog').style.display = 'none';
             };
         });
 
-        // Flood Fill Logic (Simplified)
-        function floodFill(x, y, fillCol) {
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imgData.data;
-            const startPos = (Math.floor(y) * canvas.width + Math.floor(x)) * 4;
-            const targetR = data[startPos], targetG = data[startPos+1], targetB = data[startPos+2];
-            const fillRGB = hexToRgb(fillCol);
-            
-            if (targetR === fillRGB[0] && targetG === fillRGB[1] && targetB === fillRGB[2]) return;
-
-            const queue = [[Math.floor(x), Math.floor(y)]];
-            while(queue.length > 0) {
-                const [cx, cy] = queue.pop();
-                const idx = (cy * canvas.width + cx) * 4;
-                if (cx>=0 && cx<canvas.width && cy>=0 && cy<canvas.height && 
-                    data[idx]===targetR && data[idx+1]===targetG && data[idx+2]===targetB) {
-                    data[idx]=fillRGB[0]; data[idx+1]=fillRGB[1]; data[idx+2]=fillRGB[2]; data[idx+3]=255;
-                    queue.push([cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]);
-                }
-            }
-            ctx.putImageData(imgData, 0, 0);
+        function updateColor(c) {
+            color = c;
+            document.getElementById('colorShow').style.background = c;
+            document.getElementById('colorPicker').value = c;
         }
 
-        function hexToRgb(hex) {
-            let r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
-            return [r, g, b];
-        }
-
-        // إرسال الصورة
-        document.getElementById('btnSend').onclick = async () => {
-            const btn = document.getElementById('btnSend');
-            btn.innerText = "جاري...";
-            try {
-                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-                const fd = new FormData();
-                fd.append('image', blob);
-                fd.append('key', CONFIG.IMGBB_KEY);
-                
-                const res = await fetch('https://api.imgbb.com/1/upload', { method:'POST', body:fd });
-                const data = await res.json();
-                
-                if(data.success) {
-                    await fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendPhoto`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            chat_id: tg.initDataUnsafe.user.id,
-                            photo: data.data.url,
-                            caption: "رسمة جديدة من Draw Pro Neon ✨"
-                        })
-                    });
-                    tg.close();
-                }
-            } catch (e) { alert("حدث خطأ في الإرسال"); }
-            btn.innerText = "إرسال";
+        document.getElementById('colorPicker').oninput = (e) => updateColor(e.target.value);
+        document.getElementById('sizeSlider').oninput = (e) => {
+            size = e.target.value; document.getElementById('sizeVal').innerText = size;
         };
+        document.getElementById('zoomSlider').oninput = (e) => {
+            zoom = e.target.value; wrapper.style.transform = `scale(${zoom})`;
+        };
+
+        document.getElementById('btnUndo').onclick = () => {
+            if(undoStack.length > 1) {
+                redoStack.push(undoStack.pop());
+                const img = new Image(); img.src = undoStack[undoStack.length-1];
+                img.onload = () => { ctx.clearRect(0,0,1000,1000); ctx.drawImage(img,0,0); };
+            }
+        };
+
+        document.getElementById('btnRedo').onclick = () => {
+            if(redoStack.length > 0) {
+                const data = redoStack.pop(); undoStack.push(data);
+                const img = new Image(); img.src = data;
+                img.onload = () => { ctx.clearRect(0,0,1000,1000); ctx.drawImage(img,0,0); };
+            }
+        };
+
+        document.getElementById('btnClear').onclick = () => { if(confirm("مسح اللوحة؟")) init(); };
+        document.getElementById('btnReset').onclick = () => {
+            init(); zoom = 1; wrapper.style.transform='scale(1)';
+            document.getElementById('zoomSlider').value=1; updateColor("#000000"); setTool('pencil');
+        };
+
+        // --- الحفظ والإغلاق الفوري ---
+        document.getElementById('btnSave').onclick = () => {
+            const dataUrl = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `Sketch_${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => { tg.close(); }, 800);
+        };
+
+        function floodFill(x,y,fCol){
+            const img=ctx.getImageData(0,0,1000,1000), d=img.data, i=(y*1000+x)*4;
+            const sr=d[i], sg=d[i+1], sb=d[i+2];
+            const rgb = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fCol).slice(1).map(x=>parseInt(x,16));
+            if(sr===rgb[0]&&sg===rgb[1]&&sb===rgb[2]) return;
+            const q=[[x,y]];
+            while(q.length){
+                const [cx,cy]=q.pop(); const p=(cy*1000+cx)*4;
+                if(cx>=0&&cx<1000&&cy>=0&&cy<1000&&d[p]===sr&&d[p+1]===sg&&d[p+2]===sb){
+                    d[p]=rgb[0]; d[p+1]=rgb[1]; d[p+2]=rgb[2]; d[p+3]=255;
+                    q.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+                }
+            } ctx.putImageData(img,0,0);
+        }
 
         init();
     </script>
