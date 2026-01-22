@@ -406,23 +406,41 @@
             updateZoom();
         };
 
-        // التعديل: وظيفة حفظ الصورة بدلاً من الإرسال فقط
-        document.getElementById('btnSend').onclick = () => {
-            const dataUrl = canvas.toDataURL('image/png');
-            
-            // 1. إنشاء رابط وهمي لتحميل الصورة
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = 'my-drawing-' + Date.now() + '.png'; // اسم الملف
-            document.body.appendChild(link);
-            link.click(); // ضغط الزر برمجياً
-            document.body.removeChild(link);
+        // -------------------------------------------------------------------
+        // وظيفة تحويل الصورة لملف ثم المشاركة (الحل النهائي للحفظ)
+        // -------------------------------------------------------------------
+        function dataURLtoFile(dataurl, filename) {
+            var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while(n--){
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], filename, {type:mime});
+        }
 
-            // 2. محاولة الإرسال لتيليجرام (قد لا تعمل للصور الكبيرة)
-            try {
-                tg.sendData(dataUrl); 
-            } catch(e) {
-                console.log("Image might be too large for direct send");
+        document.getElementById('btnSend').onclick = async () => {
+            const dataUrl = canvas.toDataURL('image/png');
+            const file = dataURLtoFile(dataUrl, 'my-neon-drawing.png');
+
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                // الطريقة الحديثة: مشاركة الملف مباشرة (تظهر خيارات الحفظ في الهاتف)
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'رسمتي',
+                        text: 'رسمة جديدة من Draw Pro Neon'
+                    });
+                } catch (error) {
+                    console.log('Sharing failed', error);
+                }
+            } else {
+                // طريقة احتياطية للكمبيوتر
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'my-neon-drawing.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         };
 
