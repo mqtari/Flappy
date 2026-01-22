@@ -176,33 +176,27 @@
     </div>
 
     <div class="controls">
-        <!-- الصف الأول: يحتوي على القلم، الممحاة، التعبئة، التراجع، والإعادة -->
         <div class="controls-row">
             <div class="circle-switch active" id="toolPencil"><svg viewBox="0 0 512 512"><path d="M481 31C445.1-4.8 386.9-4.8 351 31l-15 15L322.9 33C294.8 4.9 249.2 4.9 221.1 33L135 119c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0L255 66.9c9.4-9.4 24.6-9.4 33.9 0L302.1 80 186.3 195.7 316.3 325.7 481 161c35.9-35.9 35.9-94.1 0-129.9zM293.7 348.3L163.7 218.3 99.5 282.5c-48 48-80.8 109.2-94.1 175.8l-5 25c-1.6 7.9 .9 16 6.6 21.7s13.8 8.1 21.7 6.6l25-5c66.6-13.3 127.8-46.1 175.8-94.1l64.2-64.2z"/></svg></div>
             <div class="circle-switch" id="toolEraser"><svg viewBox="0 0 512 512"><path d="M497.9 210.1l-160-160c-18.7-18.7-49.1-18.7-67.9 0l-256 256c-18.7 18.7-18.7 49.1 0 67.9l96 96c9.4 9.4 22.1 14.7 35.4 14.7H480c6.6 0 12-5.4 12-12v-40c0-6.6-5.4-12-12-12H355.9l142-142c18.8-18.8 18.8-49.2 0-68z"/></svg></div>
             <div class="circle-switch" id="toolFill"><svg viewBox="0 0 512 512"><path d="M512 320s-64 92.7-64 128c0 35.3 28.66 64 64 64s64-28.66 64-64c0-35.3-64-128-64-128zM9.4 206.4l201-201c12.5-12.5 32.8-12.5 45.3 0l221.6 221.6c12.5 12.5 12.5 32.8 0 45.3L256 493.6c-12.5 12.5-32.8 12.5-45.3 0L9.4 271.7c-12.5-12.5-12.5-32.8 0-45.3z"/></svg></div>
-            <!-- زر التراجع Undo -->
             <div class="circle-switch" id="btnUndo"><svg viewBox="0 0 512 512"><path d="M212.3 224.3l99 99c4.7 4.7 4.7 12.3 0 17l-22.6 22.6c-4.7 4.7-12.3 4.7-17 0l-144.2-144c-4.7-4.7-4.7-12.3 0-17l144.2-144c4.7-4.7 12.3-4.7 17 0l22.6 22.6c4.7 4.7 4.7 12.3 0 17l-99 99h235.7c6.6 0 12 5.4 12 12v32c0 6.6-5.4 12-12 12H212.3z"/></svg></div>
-            <!-- زر الإعادة Redo -->
             <div class="circle-switch" id="btnRedo"><svg viewBox="0 0 512 512"><path d="M299.7 224.3l-99 99c-4.7 4.7-4.7 12.3 0 17l22.6 22.6c4.7 4.7 12.3 4.7 17 0l144.2-144c4.7-4.7 4.7-12.3 0-17l-144.2-144c-4.7-4.7-12.3-4.7-17 0l-22.6 22.6c-4.7 4.7-4.7 12.3 0 17l99 99H64c-6.6 0-12 5.4-12 12v32c0 6.6 5.4 12 12 12h235.7z"/></svg></div>
         </div>
 
-        <!-- الصف الثاني: يحتوي على المسح، الأشكال، الألوان، زر التقريب، زر التبعيد، والإرسال -->
         <div class="controls-row">
             <div class="circle-switch" id="btnClear" style="border-color: #ff4444; color: #ff4444"><svg viewBox="0 0 448 512"><path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64s14.3 32 32 32h384c17.7 0 32-14.3 32-32s-14.3-32-32-32h-96l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32l21.2 339c1.6 25.3 22.6 45 47.9 45h246.9c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg></div>
             <div class="circle-switch" id="btnShapes"><svg viewBox="0 0 512 512"><path d="M256 56L64 456h384L256 56zm0 82l138 278H118l138-278z"/></svg></div>
             <div class="circle-switch" id="toolColor"><input type="color" id="colorPicker" value="#000000" style="width:100%; height:100%; opacity:0; cursor:pointer"><div id="colorShow" style="width:24px; height:24px; border-radius:50%; background:#000; border:1px solid #fff"></div></div>
             
-            <!-- زر تكبير -->
             <div class="circle-switch" id="btnZoomIn">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm.5-7h-1v2.5H6.5v1h2.5V13h1v-2.5H12.5v-1H10V7z"/></svg>
             </div>
-            <!-- زر تصغير -->
             <div class="circle-switch" id="btnZoomOut">
                 <svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>
             </div>
             
-            <div class="circle-switch" id="btnSend"><span>إرسال</span></div>
+            <div class="circle-switch" id="btnSend"><span>حفظ</span></div>
         </div>
     </div>
 
@@ -398,7 +392,6 @@
             if(confirm("مسح اللوحة؟")) init();
         };
 
-        // Zoom Logic
         const updateZoom = () => {
             document.getElementById('canvasWrapper').style.transform = `scale(${zoom})`;
         };
@@ -413,10 +406,24 @@
             updateZoom();
         };
 
+        // التعديل: وظيفة حفظ الصورة بدلاً من الإرسال فقط
         document.getElementById('btnSend').onclick = () => {
             const dataUrl = canvas.toDataURL('image/png');
-            tg.sendData(`DOODLE_URL::${dataUrl}::DRAWING`);
-            tg.close();
+            
+            // 1. إنشاء رابط وهمي لتحميل الصورة
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'my-drawing-' + Date.now() + '.png'; // اسم الملف
+            document.body.appendChild(link);
+            link.click(); // ضغط الزر برمجياً
+            document.body.removeChild(link);
+
+            // 2. محاولة الإرسال لتيليجرام (قد لا تعمل للصور الكبيرة)
+            try {
+                tg.sendData(dataUrl); 
+            } catch(e) {
+                console.log("Image might be too large for direct send");
+            }
         };
 
         tempCanvas.addEventListener('touchstart', (e) => {
